@@ -2,17 +2,34 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import AddExpense from './components/AddExpense';
 import ExpenseHistory from './components/ExpenseHistory';
+import Login from './components/Login';
 import { Download, LayoutDashboard } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-    fetchExpenses();
+    // Check if user has already logged in before on this device
+    const loggedIn = localStorage.getItem('isShakeelAuthenticated');
+    if (loggedIn === 'true') {
+      setIsAuthenticated(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchExpenses();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('isShakeelAuthenticated', 'true');
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -31,7 +48,6 @@ function App() {
   };
 
   const handleAddExpense = async (newExpense) => {
-    // Optimistic update
     setExpenses(prev => [newExpense, ...prev]);
 
     try {
@@ -46,7 +62,6 @@ function App() {
         }]);
 
       if (error) {
-        // Revert on failure
         setExpenses(prev => prev.filter(exp => exp.id !== newExpense.id));
         throw error;
       }
@@ -57,10 +72,7 @@ function App() {
   };
 
   const handleDeleteExpense = async (id) => {
-    // Keep a copy in case of failure
     const previousExpenses = [...expenses];
-    
-    // Optimistic delete
     setExpenses(prev => prev.filter(exp => exp.id !== id));
 
     try {
@@ -73,7 +85,6 @@ function App() {
     } catch (error) {
       console.error('Error deleting expense:', error.message);
       alert('Failed to delete expense.');
-      // Revert on failure
       setExpenses(previousExpenses);
     }
   };
@@ -101,10 +112,12 @@ function App() {
     document.body.removeChild(link);
   };
 
-  // Get unique categories from current expenses for the tabs
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   const categories = ['All', ...new Set(expenses.map(exp => exp.category))];
   
-  // Filter expenses based on selected tab
   const filteredExpenses = selectedCategory === 'All' 
     ? expenses 
     : expenses.filter(exp => exp.category === selectedCategory);
@@ -125,7 +138,6 @@ function App() {
         </button>
       </div>
 
-      {/* Category Tabs */}
       {expenses.length > 0 && (
         <div className="category-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
           {categories.map(cat => (
