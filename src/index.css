@@ -37,7 +37,7 @@ body {
 
 #root {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   padding: 3rem 2rem;
 }
 
@@ -68,6 +68,10 @@ p.subtitle {
   font-size: 1.1rem;
 }
 
+.fw-600 { font-weight: 600; }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+
 /* Layout Classes */
 .app-container {
   display: grid;
@@ -76,7 +80,7 @@ p.subtitle {
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .app-container {
     grid-template-columns: 1fr;
   }
@@ -114,6 +118,12 @@ p.subtitle {
   flex-direction: column;
   gap: 0.4rem;
   margin-bottom: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .form-group label {
@@ -160,11 +170,6 @@ button {
 
 button:hover {
   background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-button:active {
-  transform: translateY(0);
 }
 
 button.secondary-btn {
@@ -189,13 +194,12 @@ button.icon-btn {
 button.icon-btn:hover {
   background: #fee2e2;
   color: var(--danger);
-  transform: none;
 }
 
 /* Dashboard Specifics */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.25rem;
 }
 
@@ -227,7 +231,7 @@ button.icon-btn:hover {
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-main);
 }
@@ -236,85 +240,167 @@ button.icon-btn:hover {
   color: white;
 }
 
-/* History List */
-.history-list {
+/* --------------------------------- */
+/* TABLE LAYOUT                      */
+/* --------------------------------- */
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.work-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.work-table th {
+  background: #f8fafc;
+  padding: 1rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--card-border);
+  white-space: nowrap;
+}
+
+.work-table td {
+  padding: 1.25rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.work-table tr:last-child td {
+  border-bottom: none;
+}
+
+.work-table tr:hover {
+  background: #f8fafc;
+}
+
+.progress-cell {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 500px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
 }
 
-.history-list::-webkit-scrollbar {
-  width: 6px;
-}
-.history-list::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-.history-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+.progress-cell span {
+  font-weight: 600;
+  font-size: 0.85rem;
+  width: 3ch;
 }
 
-.history-item {
+.progress-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* --------------------------------- */
+/* MOBILE CARDS (Hidden on Desktop)  */
+/* --------------------------------- */
+.mobile-list {
+  display: none;
+}
+
+.mobile-item-card {
+  background: #ffffff;
+  border-bottom: 1px solid var(--card-border);
+  padding: 1.5rem;
+}
+
+.mobile-item-card:last-child {
+  border-bottom: none;
+}
+
+.mobile-item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radius-md);
-  transition: all 0.2s;
+  margin-bottom: 1rem;
 }
 
-.history-item:hover {
-  border-color: #cbd5e1;
-  box-shadow: var(--shadow-sm);
+.mobile-item-header h3 {
+  font-size: 1.1rem;
+  margin: 0;
 }
 
-.history-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.history-title {
-  font-weight: 500;
-  font-size: 1rem;
-  color: var(--text-main);
-}
-
-.history-meta {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.category-badge {
+.company-badge {
   background: #eff6ff;
   color: #2563eb;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mobile-item-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.stat-row strong {
+  color: var(--text-main);
   font-weight: 500;
 }
 
-.history-right {
+.stat-row.highlight {
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.mobile-progress-section {
+  margin-bottom: 1.25rem;
+}
+
+.progress-label {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
 }
 
-.history-amount {
-  font-weight: 600;
-  color: var(--text-main);
-  font-size: 1.1rem;
+.mobile-delete-btn {
+  background: transparent;
+  border: 1px solid #fecaca;
+  color: var(--danger);
+  width: 100%;
 }
 
+.mobile-delete-btn:hover {
+  background: #fef2f2;
+}
+
+/* Empty State */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -325,12 +411,6 @@ button.icon-btn:hover {
   gap: 1rem;
 }
 
-.chart-container {
-  margin-top: 2rem;
-  height: 300px;
-  width: 100%;
-}
-
 .header-actions {
   display: flex;
   justify-content: space-between;
@@ -338,14 +418,8 @@ button.icon-btn:hover {
   margin-bottom: 2rem;
 }
 
-/* Category Tabs */
-.category-tabs::-webkit-scrollbar {
-  display: none;
-}
-.category-tabs {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.category-tabs::-webkit-scrollbar { display: none; }
+.category-tabs { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* --------------------------------- */
 /* LOGIN SCREEN SPECIFICS            */
@@ -377,9 +451,6 @@ button.icon-btn:hover {
   padding: 1rem;
   border-radius: 50%;
   margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .login-card h2 {
@@ -423,7 +494,7 @@ button.icon-btn:hover {
 /* --------------------------------- */
 /* MOBILE RESPONSIVE MEDIA QUERIES   */
 /* --------------------------------- */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   #root {
     padding: 1.5rem 1rem;
   }
@@ -437,24 +508,6 @@ button.icon-btn:hover {
   h1 {
     font-size: 1.75rem;
   }
-  
-  .history-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-  
-  .history-right {
-    width: 100%;
-    justify-content: space-between;
-    border-top: 1px solid var(--card-border);
-    padding-top: 0.75rem;
-  }
-  
-  .card {
-    padding: 1.25rem;
-  }
 
   .stats-grid {
     grid-template-columns: 1fr;
@@ -465,5 +518,19 @@ button.icon-btn:hover {
     box-shadow: none;
     border: none;
     background: transparent;
+  }
+  
+  /* Swap Table for Mobile Cards */
+  .table-responsive {
+    display: none;
+  }
+  
+  .mobile-list {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }

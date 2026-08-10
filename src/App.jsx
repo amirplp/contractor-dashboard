@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
-import AddExpense from './components/AddExpense';
-import ExpenseHistory from './components/ExpenseHistory';
+import AddWorkItem from './components/AddWorkItem';
+import WorkProgressTable from './components/WorkProgressTable';
 import Login from './components/Login';
 import { Download, LayoutDashboard } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [expenses, setExpenses] = useState([]);
+  const [workItems, setWorkItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-    // Check if user has already logged in before on this device
     const loggedIn = localStorage.getItem('isShakeelAuthenticated');
     if (loggedIn === 'true') {
       setIsAuthenticated(true);
@@ -22,7 +21,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchExpenses();
+      fetchWorkItems();
     }
   }, [isAuthenticated]);
 
@@ -31,73 +30,77 @@ function App() {
     localStorage.setItem('isShakeelAuthenticated', 'true');
   };
 
-  const fetchExpenses = async () => {
+  const fetchWorkItems = async () => {
     try {
       const { data, error } = await supabase
-        .from('expenses')
+        .from('work_items')
         .select('*')
         .order('date', { ascending: false });
       
       if (error) throw error;
-      if (data) setExpenses(data);
+      if (data) setWorkItems(data);
     } catch (error) {
-      console.error('Error fetching expenses:', error.message);
+      console.error('Error fetching work items:', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddExpense = async (newExpense) => {
-    setExpenses(prev => [newExpense, ...prev]);
+  const handleAddItem = async (newItem) => {
+    setWorkItems(prev => [newItem, ...prev]);
 
     try {
       const { error } = await supabase
-        .from('expenses')
+        .from('work_items')
         .insert([{
-          id: newExpense.id,
-          amount: newExpense.amount,
-          category: newExpense.category,
-          payee: newExpense.payee,
-          date: newExpense.date
+          id: newItem.id,
+          item: newItem.item,
+          company: newItem.company,
+          material_cost: newItem.material_cost,
+          amount_paid: newItem.amount_paid,
+          labor_name: newItem.labor_name,
+          labor_cost: newItem.labor_cost,
+          progress: newItem.progress,
+          date: newItem.date
         }]);
 
       if (error) {
-        setExpenses(prev => prev.filter(exp => exp.id !== newExpense.id));
+        setWorkItems(prev => prev.filter(wi => wi.id !== newItem.id));
         throw error;
       }
     } catch (error) {
-      console.error('Error adding expense:', error.message);
-      alert('Failed to save expense to the cloud.');
+      console.error('Error adding item:', error.message);
+      alert('Failed to save to the cloud. Make sure you created the work_items table in Supabase!');
     }
   };
 
-  const handleDeleteExpense = async (id) => {
-    const previousExpenses = [...expenses];
-    setExpenses(prev => prev.filter(exp => exp.id !== id));
+  const handleDeleteItem = async (id) => {
+    const previousItems = [...workItems];
+    setWorkItems(prev => prev.filter(wi => wi.id !== id));
 
     try {
       const { error } = await supabase
-        .from('expenses')
+        .from('work_items')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting expense:', error.message);
-      alert('Failed to delete expense.');
-      setExpenses(previousExpenses);
+      console.error('Error deleting item:', error.message);
+      alert('Failed to delete item.');
+      setWorkItems(previousItems);
     }
   };
 
   const exportToCSV = () => {
-    if (expenses.length === 0) return;
+    if (workItems.length === 0) return;
     
-    const headers = ['Date', 'Category', 'Payee', 'Amount (PKR)'];
+    const headers = ['Item', 'Company', 'Material Cost', 'Amount Paid', 'Labor Name', 'Labor Cost', 'Progress %', 'Date Added'];
     const csvContent = [
       headers.join(','),
-      ...expenses.map(exp => {
-        const date = new Date(exp.date).toLocaleDateString('en-PK');
-        return `"${date}","${exp.category}","${exp.payee}",${exp.amount}`;
+      ...workItems.map(wi => {
+        const date = new Date(wi.date).toLocaleDateString('en-PK');
+        return `"${wi.item}","${wi.company}",${wi.material_cost},${wi.amount_paid},"${wi.labor_name}",${wi.labor_cost},${wi.progress},"${date}"`;
       })
     ].join('\n');
 
@@ -105,7 +108,7 @@ function App() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `shakeel_expenses_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `shakeel_project_progress_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -116,19 +119,20 @@ function App() {
     return <Login onLogin={handleLogin} />;
   }
 
-  const categories = ['All', ...new Set(expenses.map(exp => exp.category))];
+  // Get unique categories for tabs (capitalized to group properly)
+  const categories = ['All', ...new Set(workItems.map(wi => wi.item.toUpperCase()))];
   
-  const filteredExpenses = selectedCategory === 'All' 
-    ? expenses 
-    : expenses.filter(exp => exp.category === selectedCategory);
+  const filteredItems = selectedCategory === 'All' 
+    ? workItems 
+    : workItems.filter(wi => wi.item.toUpperCase() === selectedCategory);
 
   return (
     <>
       <div className="header-actions">
         <div>
-          <h1>Shakeel Contractor Dashboard</h1>
+          <h1>Project Progress Dashboard</h1>
           <p className="subtitle">
-            {loading ? 'Syncing with cloud...' : 'Track and manage your expenses professionally'}
+            {loading ? 'Syncing with cloud...' : 'Track materials, labor, and work progress'}
           </p>
         </div>
         
@@ -138,7 +142,7 @@ function App() {
         </button>
       </div>
 
-      {expenses.length > 0 && (
+      {workItems.length > 0 && (
         <div className="category-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
           {categories.map(cat => (
             <button
@@ -168,12 +172,12 @@ function App() {
 
       <div className="app-container">
         <main className="main-content">
-          <Dashboard expenses={filteredExpenses} selectedCategory={selectedCategory} />
-          <ExpenseHistory expenses={filteredExpenses} onDelete={handleDeleteExpense} />
+          <Dashboard items={filteredItems} selectedCategory={selectedCategory} />
+          <WorkProgressTable items={filteredItems} onDelete={handleDeleteItem} />
         </main>
         
         <aside className="sidebar">
-          <AddExpense onAddExpense={handleAddExpense} />
+          <AddWorkItem onAddItem={handleAddItem} />
         </aside>
       </div>
     </>
