@@ -5,6 +5,7 @@ import WorkProgressTable from './components/WorkProgressTable';
 import Login from './components/Login';
 import { Download, LayoutDashboard, Search, Printer } from 'lucide-react';
 import { supabase } from './supabaseClient';
+import { arrayMove } from '@dnd-kit/sortable';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,7 +34,7 @@ function App() {
 
   const fetchWorkItems = async () => {
     try {
-      const { data, error } = await supabase.from('work_items').select('*').order('date', { ascending: false });
+      const { data, error } = await supabase.from('work_items').select('*').order('sort_order', { ascending: true });
       if (error) throw error;
       if (data) setWorkItems(data);
     } catch (error) {
@@ -54,13 +55,15 @@ function App() {
   };
 
   const handleAddItem = async (newItem) => {
-    setWorkItems(prev => [newItem, ...prev]);
+    const newItemWithOrder = { ...newItem, sort_order: workItems.length };
+    setWorkItems(prev => [...prev, newItemWithOrder]);
     try {
       const { error } = await supabase.from('work_items').insert([{
         id: newItem.id, item: newItem.item, company: newItem.company,
         material_cost: newItem.material_cost, amount_paid: newItem.amount_paid,
         labor_name: newItem.labor_name, labor_cost: newItem.labor_cost,
-        progress: newItem.progress, notes: newItem.notes, date: newItem.date
+        progress: newItem.progress, notes: newItem.notes, date: newItem.date,
+        sort_order: workItems.length
       }]);
       if (error) { setWorkItems(prev => prev.filter(wi => wi.id !== newItem.id)); throw error; }
     } catch (error) {
@@ -157,6 +160,26 @@ function App() {
     window.print();
   };
 
+  const handleReorder = async (activeId, overId) => {
+    const oldIndex = workItems.findIndex(wi => wi.id === activeId);
+    const newIndex = workItems.findIndex(wi => wi.id === overId);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(workItems, oldIndex, newIndex);
+    // Update sort_order on each item
+    const updated = reordered.map((wi, i) => ({ ...wi, sort_order: i }));
+    setWorkItems(updated);
+
+    // Save new order to Supabase
+    try {
+      for (const wi of updated) {
+        await supabase.from('work_items').update({ sort_order: wi.sort_order }).eq('id', wi.id);
+      }
+    } catch (error) {
+      console.error('Error saving order:', error.message);
+    }
+  };
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
@@ -245,6 +268,7 @@ function App() {
             onEdit={handleEditItem}
             payments={payments}
             onAddPayment={handleAddPayment}
+            onReorder={handleReorder}
           />
         </main>
         <aside className="sidebar no-print">

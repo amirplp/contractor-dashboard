@@ -159,6 +159,19 @@ button.icon-btn.edit-btn:hover { background: #eff6ff; color: var(--accent); }
 .work-table tr:hover { background: #fafbfc; }
 .work-table tr.row-expanded { background: #f8fafc; }
 
+/* Drag Handle */
+.drag-handle {
+  cursor: grab; color: #cbd5e1; width: 30px; text-align: center;
+  padding: 0.5rem !important; user-select: none; touch-action: none;
+}
+.drag-handle:hover { color: var(--accent); }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle-mobile {
+  cursor: grab; color: #cbd5e1; touch-action: none; display: flex;
+  align-items: center; padding: 0.25rem;
+}
+.drag-handle-mobile:active { cursor: grabbing; color: var(--accent); }
+
 .clickable { cursor: pointer; }
 .expand-icon { margin-left: 0.35rem; vertical-align: middle; opacity: 0.5; }
 
