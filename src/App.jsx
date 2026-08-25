@@ -4,7 +4,8 @@ import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
 import Login from './components/Login';
 import { Download, LayoutDashboard, Search, Printer } from 'lucide-react';
-import { supabase } from './supabaseClient';
+import { db } from './firebaseConfig';
+import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
 function App() {
@@ -34,9 +35,10 @@ function App() {
 
   const fetchWorkItems = async () => {
     try {
-      const { data, error } = await supabase.from('work_items').select('*').order('sort_order', { ascending: true });
-      if (error) throw error;
-      if (data) setWorkItems(data);
+      const q = query(collection(db, 'work_items'), orderBy('sort_order', 'asc'));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setWorkItems(items);
     } catch (error) {
       console.error('Error fetching work items:', error.message);
     } finally {
@@ -46,9 +48,10 @@ function App() {
 
   const fetchPayments = async () => {
     try {
-      const { data, error } = await supabase.from('payments').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      if (data) setPayments(data);
+      const q = query(collection(db, 'payments'), orderBy('date', 'desc'));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPayments(items);
     } catch (error) {
       console.error('Error fetching payments:', error.message);
     }
@@ -58,17 +61,17 @@ function App() {
     const newItemWithOrder = { ...newItem, sort_order: workItems.length };
     setWorkItems(prev => [...prev, newItemWithOrder]);
     try {
-      const { error } = await supabase.from('work_items').insert([{
-        id: newItem.id, item: newItem.item, company: newItem.company,
+      await setDoc(doc(db, 'work_items', newItem.id), {
+        item: newItem.item, company: newItem.company,
         material_cost: newItem.material_cost, amount_paid: newItem.amount_paid,
         labor_name: newItem.labor_name, labor_cost: newItem.labor_cost,
-        progress: newItem.progress, notes: newItem.notes, date: newItem.date,
-        sort_order: workItems.length
-      }]);
-      if (error) { setWorkItems(prev => prev.filter(wi => wi.id !== newItem.id)); throw error; }
+        progress: newItem.progress, notes: newItem.notes || '',
+        date: newItem.date, sort_order: workItems.length
+      });
     } catch (error) {
       console.error('Error adding item:', error.message);
-      alert('Failed to save. Make sure you ran the latest SQL in Supabase!');
+      setWorkItems(prev => prev.filter(wi => wi.id !== newItem.id));
+      alert('Failed to save. Check your Firebase connection!');
     }
   };
 
@@ -76,13 +79,12 @@ function App() {
     const previousItems = [...workItems];
     setWorkItems(prev => prev.map(wi => wi.id === updatedItem.id ? updatedItem : wi));
     try {
-      const { error } = await supabase.from('work_items').update({
+      await updateDoc(doc(db, 'work_items', updatedItem.id), {
         item: updatedItem.item, company: updatedItem.company,
         material_cost: updatedItem.material_cost, amount_paid: updatedItem.amount_paid,
         labor_name: updatedItem.labor_name, labor_cost: updatedItem.labor_cost,
-        progress: updatedItem.progress, notes: updatedItem.notes
-      }).eq('id', updatedItem.id);
-      if (error) throw error;
+        progress: updatedItem.progress, notes: updatedItem.notes || ''
+      });
     } catch (error) {
       console.error('Error updating item:', error.message);
       alert('Failed to update.');
@@ -94,8 +96,7 @@ function App() {
     const previousItems = [...workItems];
     setWorkItems(prev => prev.filter(wi => wi.id !== id));
     try {
-      const { error } = await supabase.from('work_items').delete().eq('id', id);
-      if (error) throw error;
+      await deleteDoc(doc(db, 'work_items', id));
     } catch (error) {
       console.error('Error deleting item:', error.message);
       alert('Failed to delete.');
@@ -114,18 +115,14 @@ function App() {
 
     setPayments(prev => [newPayment, ...prev]);
 
-    // Also update the total amount_paid on the work item
     const item = workItems.find(wi => wi.id === workItemId);
     if (item) {
       const newPaid = (item.amount_paid || 0) + amount;
       setWorkItems(prev => prev.map(wi => wi.id === workItemId ? { ...wi, amount_paid: newPaid } : wi));
 
       try {
-        const { error: payError } = await supabase.from('payments').insert([newPayment]);
-        if (payError) throw payError;
-
-        const { error: updateError } = await supabase.from('work_items').update({ amount_paid: newPaid }).eq('id', workItemId);
-        if (updateError) throw updateError;
+        await setDoc(doc(db, 'payments', newPayment.id), newPayment);
+        await updateDoc(doc(db, 'work_items', workItemId), { amount_paid: newPaid });
       } catch (error) {
         console.error('Error adding payment:', error.message);
         alert('Failed to record payment.');
@@ -166,14 +163,12 @@ function App() {
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(workItems, oldIndex, newIndex);
-    // Update sort_order on each item
     const updated = reordered.map((wi, i) => ({ ...wi, sort_order: i }));
     setWorkItems(updated);
 
-    // Save new order to Supabase
     try {
       for (const wi of updated) {
-        await supabase.from('work_items').update({ sort_order: wi.sort_order }).eq('id', wi.id);
+        await updateDoc(doc(db, 'work_items', wi.id), { sort_order: wi.sort_order });
       }
     } catch (error) {
       console.error('Error saving order:', error.message);
@@ -253,7 +248,6 @@ function App() {
         </div>
       )}
 
-      {/* Print Header (only shows when printing) */}
       <div className="print-only print-header">
         <h1>Project Progress Report</h1>
         <p>Generated on: {new Date().toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
