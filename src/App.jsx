@@ -12,6 +12,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [workItems, setWorkItems] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +26,7 @@ function App() {
     if (isAuthenticated) {
       fetchWorkItems();
       fetchPayments();
+      fetchAttachments();
     }
   }, [isAuthenticated]);
 
@@ -54,6 +56,17 @@ function App() {
       setPayments(items);
     } catch (error) {
       console.error('Error fetching payments:', error.message);
+    }
+  };
+
+  const fetchAttachments = async () => {
+    try {
+      const q = query(collection(db, 'attachments'), orderBy('date', 'desc'));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAttachments(items);
+    } catch (error) {
+      console.error('Error fetching attachments:', error.message);
     }
   };
 
@@ -132,6 +145,87 @@ function App() {
     }
   };
 
+  // Attachments Handlers
+  const handleUploadAttachment = async (newAttachment) => {
+    setAttachments(prev => [newAttachment, ...prev]);
+    try {
+      await setDoc(doc(db, 'attachments', newAttachment.id), newAttachment);
+    } catch (error) {
+      console.error('Error saving attachment:', error.message);
+      setAttachments(prev => prev.filter(a => a.id !== newAttachment.id));
+      alert('Failed to save attachment to cloud.');
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    const prev = [...attachments];
+    setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+    try {
+      await deleteDoc(doc(db, 'attachments', attachmentId));
+    } catch (error) {
+      console.error('Error deleting attachment:', error.message);
+      setAttachments(prev);
+      alert('Failed to delete attachment.');
+    }
+  };
+
+  // Reordering System (Instant buttons & Drag)
+  const updateItemsOrder = async (newOrderedList) => {
+    const updated = newOrderedList.map((wi, i) => ({ ...wi, sort_order: i }));
+    setWorkItems(updated);
+
+    try {
+      for (const wi of updated) {
+        await updateDoc(doc(db, 'work_items', wi.id), { sort_order: wi.sort_order });
+      }
+    } catch (error) {
+      console.error('Error saving order:', error.message);
+    }
+  };
+
+  const handleReorder = async (activeId, overId) => {
+    const oldIndex = workItems.findIndex(wi => wi.id === activeId);
+    const newIndex = workItems.findIndex(wi => wi.id === overId);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(workItems, oldIndex, newIndex);
+    updateItemsOrder(reordered);
+  };
+
+  const handleMoveUp = (id) => {
+    const idx = workItems.findIndex(wi => wi.id === id);
+    if (idx <= 0) return;
+    const next = [...workItems];
+    const temp = next[idx];
+    next[idx] = next[idx - 1];
+    next[idx - 1] = temp;
+    updateItemsOrder(next);
+  };
+
+  const handleMoveDown = (id) => {
+    const idx = workItems.findIndex(wi => wi.id === id);
+    if (idx === -1 || idx >= workItems.length - 1) return;
+    const next = [...workItems];
+    const temp = next[idx];
+    next[idx] = next[idx + 1];
+    next[idx + 1] = temp;
+    updateItemsOrder(next);
+  };
+
+  const handleMoveToTop = (id) => {
+    const idx = workItems.findIndex(wi => wi.id === id);
+    if (idx <= 0) return;
+    const item = workItems[idx];
+    const next = [item, ...workItems.filter(wi => wi.id !== id)];
+    updateItemsOrder(next);
+  };
+
+  const handleMoveToPosition = (id, targetIndex) => {
+    const fromIndex = workItems.findIndex(wi => wi.id === id);
+    if (fromIndex === -1 || targetIndex < 0 || targetIndex >= workItems.length || fromIndex === targetIndex) return;
+    const reordered = arrayMove(workItems, fromIndex, targetIndex);
+    updateItemsOrder(reordered);
+  };
+
   const exportToCSV = () => {
     if (workItems.length === 0) return;
     const headers = ['Item', 'Company', 'Material Cost', 'Amount Paid', 'Balance', 'Labor Name', 'Labor Cost', 'Progress %', 'Notes', 'Date'];
@@ -155,24 +249,6 @@ function App() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleReorder = async (activeId, overId) => {
-    const oldIndex = workItems.findIndex(wi => wi.id === activeId);
-    const newIndex = workItems.findIndex(wi => wi.id === overId);
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const reordered = arrayMove(workItems, oldIndex, newIndex);
-    const updated = reordered.map((wi, i) => ({ ...wi, sort_order: i }));
-    setWorkItems(updated);
-
-    try {
-      for (const wi of updated) {
-        await updateDoc(doc(db, 'work_items', wi.id), { sort_order: wi.sort_order });
-      }
-    } catch (error) {
-      console.error('Error saving order:', error.message);
-    }
   };
 
   if (!isAuthenticated) {
@@ -262,7 +338,14 @@ function App() {
             onEdit={handleEditItem}
             payments={payments}
             onAddPayment={handleAddPayment}
+            attachments={attachments}
+            onUploadAttachment={handleUploadAttachment}
+            onDeleteAttachment={handleDeleteAttachment}
             onReorder={handleReorder}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
+            onMoveToTop={handleMoveToTop}
+            onMoveToPosition={handleMoveToPosition}
           />
         </main>
         <aside className="sidebar no-print">

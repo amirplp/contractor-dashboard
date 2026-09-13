@@ -1,30 +1,49 @@
 import React, { useState } from 'react';
-import { Trash2, Pencil, Check, X, ChevronDown, ChevronUp, Plus, GripVertical } from 'lucide-react';
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { 
+  Trash2, Pencil, Check, X, ChevronDown, ChevronUp, Plus, 
+  GripVertical, ArrowUp, ArrowDown, ChevronsUp, Paperclip 
+} from 'lucide-react';
+import { 
+  DndContext, closestCenter, PointerSensor, TouchSensor, 
+  useSensor, useSensors 
+} from '@dnd-kit/core';
+import { 
+  SortableContext, verticalListSortingStrategy, useSortable 
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import AttachmentSection from './AttachmentSection';
 
 /* ---------- Sortable Table Row ---------- */
-const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
+const SortableRow = ({
+  item, index, totalCount, isEditing, isExpanded, editData, balance, payments,
+  attachments = [], onUploadAttachment, onDeleteAttachment,
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
-  confirmDelete, toggleExpand, handleAddPayment }) => {
-
+  confirmDelete, toggleExpand, handleAddPayment,
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 20 : 'auto',
   };
+
   const itemPayments = payments.filter(p => p.work_item_id === item.id);
+  const itemAttachments = attachments.filter(a => a.workItemId === item.id);
+  const isFirst = index === 0;
+  const isLast = index === totalCount - 1;
 
   return (
     <React.Fragment>
-      <tr ref={setNodeRef} style={style} className={isExpanded ? 'row-expanded' : ''}>
+      <tr ref={setNodeRef} style={style} className={`${isExpanded ? 'row-expanded' : ''} ${isDragging ? 'is-dragging' : ''}`}>
         {isEditing ? (
           <>
-            <td style={{ width: '30px' }}></td>
+            <td style={{ width: '80px', textAlign: 'center' }}>
+              <span className="priority-badge">#{index + 1}</span>
+            </td>
             <td><input className="inline-input" value={editData.item} onChange={(e) => handleEditChange('item', e.target.value)} /></td>
             <td><input className="inline-input" value={editData.company} onChange={(e) => handleEditChange('company', e.target.value)} /></td>
             <td><input className="inline-input" type="number" value={editData.material_cost} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></td>
@@ -42,13 +61,78 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
           </>
         ) : (
           <>
-            <td className="drag-handle" {...attributes} {...listeners}>
-              <GripVertical size={16} />
+            {/* Priority & Reorder Controls Column */}
+            <td className="reorder-td">
+              <div className="priority-control-group">
+                <span className="drag-handle" {...attributes} {...listeners} title="Drag to reorder">
+                  <GripVertical size={16} />
+                </span>
+
+                {/* Priority Selector Pill */}
+                <div className="priority-select-wrap" title={`Rank #${index + 1} - Tap to change`}>
+                  <span className="priority-badge">#{index + 1}</span>
+                  <select
+                    className="priority-dropdown"
+                    value={index}
+                    onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
+                    title="Change priority position"
+                  >
+                    {Array.from({ length: totalCount }, (_, i) => (
+                      <option key={i} value={i}>
+                        {i === 0 ? 'Position #1 (Top Priority)' : `Position #${i + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 1-Tap Quick Action Buttons */}
+                <div className="quick-arrow-btns">
+                  {!isFirst && (
+                    <button
+                      type="button"
+                      className="reorder-arrow-btn top-btn"
+                      onClick={() => onMoveToTop(item.id)}
+                      title="Move to Top (Priority #1)"
+                    >
+                      <ChevronsUp size={13} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="reorder-arrow-btn"
+                    onClick={() => onMoveUp(item.id)}
+                    disabled={isFirst}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="reorder-arrow-btn"
+                    onClick={() => onMoveDown(item.id)}
+                    disabled={isLast}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                </div>
+              </div>
             </td>
-            <td className="fw-600 clickable" onClick={() => toggleExpand(item.id)}>
-              {item.item.toUpperCase()}
-              {isExpanded ? <ChevronUp size={14} className="expand-icon" /> : <ChevronDown size={14} className="expand-icon" />}
+
+            {/* Item Title & Attachments Badge */}
+            <td className="fw-600 clickable item-name-td" onClick={() => toggleExpand(item.id)}>
+              <div className="item-title-row">
+                <span>{item.item.toUpperCase()}</span>
+                {itemAttachments.length > 0 && (
+                  <span className="attachment-badge-pill" title={`${itemAttachments.length} attachments / proofs`}>
+                    <Paperclip size={12} />
+                    <span>{itemAttachments.length}</span>
+                  </span>
+                )}
+                {isExpanded ? <ChevronUp size={14} className="expand-icon" /> : <ChevronDown size={14} className="expand-icon" />}
+              </div>
             </td>
+
             <td>{item.company}</td>
             <td>{formatCurrency(item.material_cost)}</td>
             <td>{formatCurrency(item.amount_paid)}</td>
@@ -58,7 +142,9 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
             <td>
               <div className="progress-cell">
                 <span>{item.progress}%</span>
-                <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${item.progress}%` }}></div></div>
+                <div className="progress-bar-bg">
+                  <div className="progress-bar-fill" style={{ width: `${item.progress}%` }}></div>
+                </div>
               </div>
             </td>
             <td>
@@ -70,6 +156,8 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
           </>
         )}
       </tr>
+
+      {/* Expanded Row: Notes, Payments, and Attachments */}
       {isExpanded && !isEditing && (
         <tr className="expanded-row">
           <td colSpan="11">
@@ -79,6 +167,16 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
                   <strong>Notes:</strong> <span>{item.notes}</span>
                 </div>
               )}
+
+              {/* Attachments Section */}
+              <AttachmentSection
+                workItemId={item.id}
+                attachments={attachments}
+                onUpload={onUploadAttachment}
+                onDelete={onDeleteAttachment}
+              />
+
+              {/* Payment History Section */}
               <div className="payments-section">
                 <strong>Payment History</strong>
                 {itemPayments.length > 0 ? (
@@ -95,9 +193,24 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
                   <p className="no-payments">No payment records yet.</p>
                 )}
                 <div className="add-payment-row">
-                  <input type="number" placeholder="Amount" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="inline-input" min="0" />
-                  <input type="text" placeholder="Note (optional)" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} className="inline-input" />
-                  <button className="add-payment-btn" onClick={() => handleAddPayment(item.id)}><Plus size={14} /> Add Payment</button>
+                  <input
+                    type="number"
+                    placeholder="Amount (PKR)"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="inline-input"
+                    min="0"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Note / Cheque # (optional)"
+                    value={paymentNote}
+                    onChange={(e) => setPaymentNote(e.target.value)}
+                    className="inline-input"
+                  />
+                  <button className="add-payment-btn" onClick={() => handleAddPayment(item.id)}>
+                    <Plus size={14} /> Add Payment
+                  </button>
                 </div>
               </div>
             </div>
@@ -109,30 +222,97 @@ const SortableRow = ({ item, isEditing, isExpanded, editData, balance, payments,
 };
 
 /* ---------- Sortable Mobile Card ---------- */
-const SortableMobileCard = ({ item, isEditing, isExpanded, editData, balance, payments,
+const SortableMobileCard = ({
+  item, index, totalCount, isEditing, isExpanded, editData, balance, payments,
+  attachments = [], onUploadAttachment, onDeleteAttachment,
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
-  confirmDelete, toggleExpand, handleAddPayment }) => {
-
+  confirmDelete, toggleExpand, handleAddPayment,
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
+
   const itemPayments = payments.filter(p => p.work_item_id === item.id);
+  const itemAttachments = attachments.filter(a => a.workItemId === item.id);
+  const isFirst = index === 0;
+  const isLast = index === totalCount - 1;
 
   return (
-    <div ref={setNodeRef} style={style} className="mobile-item-card">
-      <div className="mobile-item-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="drag-handle-mobile" {...attributes} {...listeners}><GripVertical size={18} /></span>
-          <h3 onClick={() => toggleExpand(item.id)} style={{ cursor: 'pointer' }}>
-            {item.item.toUpperCase()}
-            {isExpanded ? <ChevronUp size={14} style={{ marginLeft: '0.25rem' }} /> : <ChevronDown size={14} style={{ marginLeft: '0.25rem' }} />}
-          </h3>
+    <div ref={setNodeRef} style={style} className={`mobile-item-card ${isDragging ? 'is-dragging' : ''}`}>
+      {/* Mobile Card Header with Priority Reorder Controls */}
+      <div className="mobile-card-top-bar">
+        <div className="mobile-priority-cluster">
+          <span className="drag-handle-mobile" {...attributes} {...listeners} title="Drag to reorder">
+            <GripVertical size={18} />
+          </span>
+
+          <div className="priority-select-wrap">
+            <span className="priority-badge">#{index + 1}</span>
+            <select
+              className="priority-dropdown"
+              value={index}
+              onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
+            >
+              {Array.from({ length: totalCount }, (_, i) => (
+                <option key={i} value={i}>
+                  {i === 0 ? 'Position #1 (Top)' : `Position #${i + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="quick-arrow-btns">
+            {!isFirst && (
+              <button
+                type="button"
+                className="reorder-arrow-btn top-btn"
+                onClick={() => onMoveToTop(item.id)}
+                title="Move to Top (Priority 1)"
+              >
+                <ChevronsUp size={14} />
+              </button>
+            )}
+            <button
+              type="button"
+              className="reorder-arrow-btn"
+              onClick={() => onMoveUp(item.id)}
+              disabled={isFirst}
+              title="Move Up"
+            >
+              <ArrowUp size={14} />
+            </button>
+            <button
+              type="button"
+              className="reorder-arrow-btn"
+              onClick={() => onMoveDown(item.id)}
+              disabled={isLast}
+              title="Move Down"
+            >
+              <ArrowDown size={14} />
+            </button>
+          </div>
         </div>
+
         <span className="company-badge">{item.company}</span>
+      </div>
+
+      <div className="mobile-item-title-section" onClick={() => toggleExpand(item.id)}>
+        <div className="mobile-title-wrap">
+          <h3>{item.item.toUpperCase()}</h3>
+          {itemAttachments.length > 0 && (
+            <span className="attachment-badge-pill">
+              <Paperclip size={12} />
+              <span>{itemAttachments.length}</span>
+            </span>
+          )}
+        </div>
+        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </div>
 
       {isEditing ? (
@@ -173,6 +353,16 @@ const SortableMobileCard = ({ item, isEditing, isExpanded, editData, balance, pa
           {isExpanded && (
             <div className="mobile-expanded">
               {item.notes && <div className="notes-section"><strong>Notes:</strong> <span>{item.notes}</span></div>}
+
+              {/* Attachments */}
+              <AttachmentSection
+                workItemId={item.id}
+                attachments={attachments}
+                onUpload={onUploadAttachment}
+                onDelete={onDeleteAttachment}
+              />
+
+              {/* Payment History */}
               <div className="payments-section">
                 <strong>Payment History</strong>
                 {itemPayments.length > 0 ? (
@@ -189,7 +379,7 @@ const SortableMobileCard = ({ item, isEditing, isExpanded, editData, balance, pa
                   <p className="no-payments">No payment records yet.</p>
                 )}
                 <div className="add-payment-col">
-                  <input type="number" placeholder="Amount" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} min="0" />
+                  <input type="number" placeholder="Amount (PKR)" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} min="0" />
                   <input type="text" placeholder="Note (optional)" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
                   <button onClick={() => handleAddPayment(item.id)}><Plus size={14} /> Add Payment</button>
                 </div>
@@ -208,16 +398,21 @@ const SortableMobileCard = ({ item, isEditing, isExpanded, editData, balance, pa
 };
 
 /* ---------- Main Component ---------- */
-const WorkProgressTable = ({ items, onDelete, onEdit, payments, onAddPayment, onReorder }) => {
+const WorkProgressTable = ({
+  items, onDelete, onEdit, payments, onAddPayment, onReorder,
+  attachments = [], onUploadAttachment, onDeleteAttachment,
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+}) => {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
 
+  // Enhanced sensors: PointerSensor with 6px constraint, TouchSensor with proper delay & tolerance
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } })
   );
 
   const formatCurrency = (amount) => {
@@ -238,7 +433,7 @@ const WorkProgressTable = ({ items, onDelete, onEdit, payments, onAddPayment, on
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       onReorder(active.id, over.id);
     }
   };
@@ -247,15 +442,18 @@ const WorkProgressTable = ({ items, onDelete, onEdit, payments, onAddPayment, on
     return <div className="card empty-state"><p>No work items found. Add your first item to start tracking.</p></div>;
   }
 
-  const sharedProps = (item) => {
+  const sharedProps = (item, index) => {
     const totalCost = (item.material_cost || 0) + (item.labor_cost || 0);
     const balance = totalCost - (item.amount_paid || 0);
     return {
-      item, isEditing: editingId === item.id, isExpanded: expandedId === item.id,
+      item, index, totalCount: items.length,
+      isEditing: editingId === item.id, isExpanded: expandedId === item.id,
       editData, balance, payments, paymentAmount, paymentNote,
       setPaymentAmount, setPaymentNote, formatCurrency, startEdit, cancelEdit,
       saveEdit, handleEditChange, confirmDelete, toggleExpand,
       handleAddPayment: handleAddPaymentLocal,
+      attachments, onUploadAttachment, onDeleteAttachment,
+      onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
     };
   };
 
@@ -268,7 +466,7 @@ const WorkProgressTable = ({ items, onDelete, onEdit, payments, onAddPayment, on
             <table className="work-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}></th>
+                  <th style={{ width: '130px', textAlign: 'center' }}>PRIORITY</th>
                   <th>ITEM</th>
                   <th>COMPANY</th>
                   <th>MATERIAL COST</th>
@@ -281,14 +479,18 @@ const WorkProgressTable = ({ items, onDelete, onEdit, payments, onAddPayment, on
                 </tr>
               </thead>
               <tbody>
-                {items.map(item => <SortableRow key={item.id} {...sharedProps(item)} />)}
+                {items.map((item, idx) => (
+                  <SortableRow key={item.id} {...sharedProps(item, idx)} />
+                ))}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Cards */}
           <div className="mobile-list">
-            {items.map(item => <SortableMobileCard key={item.id} {...sharedProps(item)} />)}
+            {items.map((item, idx) => (
+              <SortableMobileCard key={item.id} {...sharedProps(item, idx)} />
+            ))}
           </div>
         </div>
       </SortableContext>
