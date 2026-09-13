@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import AttachmentSection from './AttachmentSection';
+import NotesSection from './NotesSection';
 
 /* ---------- Sortable Table Row ---------- */
 const SortableRow = ({
@@ -20,7 +21,7 @@ const SortableRow = ({
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
   confirmDelete, toggleExpand, handleAddPayment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   
@@ -162,11 +163,12 @@ const SortableRow = ({
         <tr className="expanded-row">
           <td colSpan="11">
             <div className="expanded-content">
-              {item.notes && (
-                <div className="notes-section">
-                  <strong>Notes:</strong> <span>{item.notes}</span>
-                </div>
-              )}
+              {/* Editable Notes & Remarks Section */}
+              <NotesSection
+                workItemId={item.id}
+                currentNotes={item.notes}
+                onSaveNotes={onUpdateNotes}
+              />
 
               {/* Attachments Section */}
               <AttachmentSection
@@ -228,7 +230,7 @@ const SortableMobileCard = ({
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
   confirmDelete, toggleExpand, handleAddPayment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   
@@ -352,7 +354,12 @@ const SortableMobileCard = ({
 
           {isExpanded && (
             <div className="mobile-expanded">
-              {item.notes && <div className="notes-section"><strong>Notes:</strong> <span>{item.notes}</span></div>}
+              {/* Editable Notes & Remarks Section */}
+              <NotesSection
+                workItemId={item.id}
+                currentNotes={item.notes}
+                onSaveNotes={onUpdateNotes}
+              />
 
               {/* Attachments */}
               <AttachmentSection
@@ -401,7 +408,7 @@ const SortableMobileCard = ({
 const WorkProgressTable = ({
   items, onDelete, onEdit, payments, onAddPayment, onReorder,
   attachments = [], onUploadAttachment, onDeleteAttachment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
 }) => {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -453,7 +460,7 @@ const WorkProgressTable = ({
       saveEdit, handleEditChange, confirmDelete, toggleExpand,
       handleAddPayment: handleAddPaymentLocal,
       attachments, onUploadAttachment, onDeleteAttachment,
-      onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition
+      onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
     };
   };
 

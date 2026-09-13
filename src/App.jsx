@@ -105,6 +105,18 @@ function App() {
     }
   };
 
+  const handleUpdateNotes = async (itemId, notes) => {
+    const previousItems = [...workItems];
+    setWorkItems(prev => prev.map(wi => wi.id === itemId ? { ...wi, notes } : wi));
+    try {
+      await updateDoc(doc(db, 'work_items', itemId), { notes: notes || '' });
+    } catch (error) {
+      console.error('Error updating notes:', error.message);
+      alert('Failed to update note.');
+      setWorkItems(previousItems);
+    }
+  };
+
   const handleDeleteItem = async (id) => {
     const previousItems = [...workItems];
     setWorkItems(prev => prev.filter(wi => wi.id !== id));
@@ -346,6 +358,7 @@ function App() {
             onMoveDown={handleMoveDown}
             onMoveToTop={handleMoveToTop}
             onMoveToPosition={handleMoveToPosition}
+            onUpdateNotes={handleUpdateNotes}
           />
         </main>
         <aside className="sidebar no-print">
