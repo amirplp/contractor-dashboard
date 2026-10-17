@@ -49,9 +49,12 @@ const SortableRow = ({
             <td><input className="inline-input" value={editData.company} onChange={(e) => handleEditChange('company', e.target.value)} /></td>
             <td><input className="inline-input" type="number" value={editData.material_cost} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></td>
             <td><input className="inline-input" type="number" value={editData.amount_paid} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></td>
-            <td className={balance > 0 ? 'text-danger' : 'text-success'}>{formatCurrency((editData.material_cost || 0) + (editData.labor_cost || 0) - (editData.amount_paid || 0))}</td>
+            <td className={balance > 0 ? 'text-danger' : 'text-success'}>
+              {formatCurrency((editData.material_cost || 0) + (editData.labor_cost || 0) - (editData.amount_paid || 0) - (editData.labor_paid || 0))}
+            </td>
             <td><input className="inline-input" value={editData.labor_name} onChange={(e) => handleEditChange('labor_name', e.target.value)} /></td>
             <td><input className="inline-input" type="number" value={editData.labor_cost} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></td>
+            <td><input className="inline-input" type="number" value={editData.labor_paid || 0} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></td>
             <td><input className="inline-input" type="number" value={editData.progress} min="0" max="100" onChange={(e) => handleEditChange('progress', Math.min(100, Number(e.target.value)))} /></td>
             <td>
               <div className="action-btns">
@@ -140,6 +143,7 @@ const SortableRow = ({
             <td className={balance > 0 ? 'text-danger' : 'text-success'}>{formatCurrency(balance)}</td>
             <td>{item.labor_name}</td>
             <td>{formatCurrency(item.labor_cost)}</td>
+            <td>{formatCurrency(item.labor_paid)}</td>
             <td>
               <div className="progress-cell">
                 <span>{item.progress}%</span>
@@ -161,7 +165,7 @@ const SortableRow = ({
       {/* Expanded Row: Notes, Payments, and Attachments */}
       {isExpanded && !isEditing && (
         <tr className="expanded-row">
-          <td colSpan="11">
+          <td colSpan="12">
             <div className="expanded-content">
               {/* Editable Notes & Remarks Section */}
               <NotesSection
@@ -328,8 +332,8 @@ const SortableMobileCard = ({
             <div className="form-group"><label>Amount Paid</label><input type="number" value={editData.amount_paid} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></div>
           </div>
           <div className="form-row">
-            <div className="form-group"><label>Labor Name</label><input value={editData.labor_name} onChange={(e) => handleEditChange('labor_name', e.target.value)} /></div>
             <div className="form-group"><label>Labor Cost</label><input type="number" value={editData.labor_cost} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></div>
+            <div className="form-group"><label>Labor Paid</label><input type="number" value={editData.labor_paid || 0} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></div>
           </div>
           <div className="form-group"><label>Progress %</label><input type="number" value={editData.progress} min="0" max="100" onChange={(e) => handleEditChange('progress', Math.min(100, Number(e.target.value)))} /></div>
           <div className="form-group"><label>Notes</label><textarea value={editData.notes || ''} onChange={(e) => handleEditChange('notes', e.target.value)} rows="2" /></div>
@@ -342,8 +346,9 @@ const SortableMobileCard = ({
         <>
           <div className="mobile-item-stats">
             <div className="stat-row"><span>Material Cost:</span><strong>{formatCurrency(item.material_cost)}</strong></div>
+            <div className="stat-row"><span>Material Paid:</span><strong>{formatCurrency(item.amount_paid)}</strong></div>
             <div className="stat-row"><span>Labor ({item.labor_name}):</span><strong>{formatCurrency(item.labor_cost)}</strong></div>
-            <div className="stat-row"><span>Paid:</span><strong>{formatCurrency(item.amount_paid)}</strong></div>
+            <div className="stat-row"><span>Labor Paid:</span><strong>{formatCurrency(item.labor_paid)}</strong></div>
             <div className="stat-row highlight"><span>Balance:</span><strong className={balance > 0 ? 'text-danger' : 'text-success'}>{formatCurrency(balance)}</strong></div>
           </div>
 
@@ -426,7 +431,7 @@ const WorkProgressTable = ({
     return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', minimumFractionDigits: 0 }).format(amount || 0);
   };
 
-  const startEdit = (item) => { setEditingId(item.id); setEditData({ ...item }); };
+  const startEdit = (item) => { setEditingId(item.id); setEditData({ ...item, labor_paid: item.labor_paid || 0 }); };
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
   const saveEdit = () => { onEdit(editData); setEditingId(null); setEditData({}); };
   const handleEditChange = (field, value) => { setEditData(prev => ({ ...prev, [field]: value })); };
@@ -451,7 +456,8 @@ const WorkProgressTable = ({
 
   const sharedProps = (item, index) => {
     const totalCost = (item.material_cost || 0) + (item.labor_cost || 0);
-    const balance = totalCost - (item.amount_paid || 0);
+    const totalPaid = (item.amount_paid || 0) + (item.labor_paid || 0);
+    const balance = totalCost - totalPaid;
     return {
       item, index, totalCount: items.length,
       isEditing: editingId === item.id, isExpanded: expandedId === item.id,
@@ -477,10 +483,11 @@ const WorkProgressTable = ({
                   <th>ITEM</th>
                   <th>COMPANY</th>
                   <th>MATERIAL COST</th>
-                  <th>AMOUNT PAID</th>
+                  <th>MATERIAL PAID</th>
                   <th>BALANCE</th>
                   <th>LABOUR</th>
                   <th>LABOUR COST</th>
+                  <th>LABOUR PAID</th>
                   <th>PROGRESS</th>
                   <th></th>
                 </tr>

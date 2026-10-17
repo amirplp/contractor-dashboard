@@ -9,6 +9,7 @@ const AddWorkItem = ({ onAddItem }) => {
     amount_paid: '',
     labor_name: '',
     labor_cost: '',
+    labor_paid: '',
     progress: '',
     notes: ''
   });
@@ -30,6 +31,7 @@ const AddWorkItem = ({ onAddItem }) => {
       amount_paid: Number(formData.amount_paid) || 0,
       labor_name: formData.labor_name || 'N/A',
       labor_cost: Number(formData.labor_cost) || 0,
+      labor_paid: Number(formData.labor_paid) || 0,
       progress: Math.min(100, Math.max(0, Number(formData.progress) || 0)),
       notes: formData.notes || '',
       date: new Date().toISOString()
@@ -37,7 +39,7 @@ const AddWorkItem = ({ onAddItem }) => {
 
     setFormData({
       item: '', company: '', material_cost: '', amount_paid: '',
-      labor_name: '', labor_cost: '', progress: '', notes: ''
+      labor_name: '', labor_cost: '', labor_paid: '', progress: '', notes: ''
     });
   };
 
@@ -59,18 +61,22 @@ const AddWorkItem = ({ onAddItem }) => {
             <input type="number" name="material_cost" value={formData.material_cost} onChange={handleChange} placeholder="0" min="0" />
           </div>
           <div className="form-group">
-            <label>Amount Paid</label>
+            <label>Material Paid</label>
             <input type="number" name="amount_paid" value={formData.amount_paid} onChange={handleChange} placeholder="0" min="0" />
           </div>
         </div>
+        <div className="form-group">
+          <label>Labor Name</label>
+          <input type="text" name="labor_name" value={formData.labor_name} onChange={handleChange} placeholder="e.g. AMIR" />
+        </div>
         <div className="form-row">
-          <div className="form-group">
-            <label>Labor Name</label>
-            <input type="text" name="labor_name" value={formData.labor_name} onChange={handleChange} placeholder="e.g. AMIR" />
-          </div>
           <div className="form-group">
             <label>Labor Cost</label>
             <input type="number" name="labor_cost" value={formData.labor_cost} onChange={handleChange} placeholder="0" min="0" />
+          </div>
+          <div className="form-group">
+            <label>Labor Paid</label>
+            <input type="number" name="labor_paid" value={formData.labor_paid} onChange={handleChange} placeholder="0" min="0" />
           </div>
         </div>
         <div className="form-group">

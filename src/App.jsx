@@ -78,6 +78,7 @@ function App() {
         item: newItem.item, company: newItem.company,
         material_cost: newItem.material_cost, amount_paid: newItem.amount_paid,
         labor_name: newItem.labor_name, labor_cost: newItem.labor_cost,
+        labor_paid: newItem.labor_paid || 0,
         progress: newItem.progress, notes: newItem.notes || '',
         date: newItem.date, sort_order: workItems.length
       });
@@ -96,6 +97,7 @@ function App() {
         item: updatedItem.item, company: updatedItem.company,
         material_cost: updatedItem.material_cost, amount_paid: updatedItem.amount_paid,
         labor_name: updatedItem.labor_name, labor_cost: updatedItem.labor_cost,
+        labor_paid: updatedItem.labor_paid || 0,
         progress: updatedItem.progress, notes: updatedItem.notes || ''
       });
     } catch (error) {
@@ -240,13 +242,13 @@ function App() {
 
   const exportToCSV = () => {
     if (workItems.length === 0) return;
-    const headers = ['Item', 'Company', 'Material Cost', 'Amount Paid', 'Balance', 'Labor Name', 'Labor Cost', 'Progress %', 'Notes', 'Date'];
+    const headers = ['Item', 'Company', 'Material Cost', 'Material Paid', 'Balance', 'Labor Name', 'Labor Cost', 'Labor Paid', 'Progress %', 'Notes', 'Date'];
     const csvContent = [
       headers.join(','),
       ...workItems.map(wi => {
-        const balance = (wi.material_cost || 0) + (wi.labor_cost || 0) - (wi.amount_paid || 0);
+        const balance = (wi.material_cost || 0) + (wi.labor_cost || 0) - (wi.amount_paid || 0) - (wi.labor_paid || 0);
         const date = new Date(wi.date).toLocaleDateString('en-PK');
-        return `"${wi.item}","${wi.company}",${wi.material_cost},${wi.amount_paid},${balance},"${wi.labor_name}",${wi.labor_cost},${wi.progress},"${(wi.notes || '').replace(/"/g, '""')}","${date}"`;
+        return `"${wi.item}","${wi.company}",${wi.material_cost || 0},${wi.amount_paid || 0},${balance},"${wi.labor_name || 'N/A'}",${wi.labor_cost || 0},${wi.labor_paid || 0},${wi.progress || 0},"${(wi.notes || '').replace(/"/g, '""')}","${date}"`;
       })
     ].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

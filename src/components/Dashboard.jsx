@@ -4,16 +4,18 @@ const Dashboard = ({ items, selectedCategory }) => {
   const totals = items.reduce(
     (acc, item) => {
       acc.material += Number(item.material_cost) || 0;
+      acc.materialPaid += Number(item.amount_paid) || 0;
       acc.labor += Number(item.labor_cost) || 0;
-      acc.paid += Number(item.amount_paid) || 0;
+      acc.laborPaid += Number(item.labor_paid) || 0;
       acc.progressSum += Number(item.progress) || 0;
       return acc;
     },
-    { material: 0, labor: 0, paid: 0, progressSum: 0 }
+    { material: 0, materialPaid: 0, labor: 0, laborPaid: 0, progressSum: 0 }
   );
 
   const totalCost = totals.material + totals.labor;
-  const balance = totalCost - totals.paid;
+  const totalPaid = totals.materialPaid + totals.laborPaid;
+  const balance = totalCost - totalPaid;
   const avgProgress = items.length > 0 ? Math.round(totals.progressSum / items.length) : 0;
 
   const formatCurrency = (amount) => {
@@ -60,14 +62,20 @@ const Dashboard = ({ items, selectedCategory }) => {
         <div className="stat-card">
           <span className="stat-title">Material Cost</span>
           <span className="stat-value">{formatCurrency(totals.material)}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            Paid: {formatCurrency(totals.materialPaid)}
+          </span>
         </div>
         <div className="stat-card">
           <span className="stat-title">Labor Cost</span>
           <span className="stat-value">{formatCurrency(totals.labor)}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            Paid: {formatCurrency(totals.laborPaid)}
+          </span>
         </div>
         <div className="stat-card">
-          <span className="stat-title">Amount Paid</span>
-          <span className="stat-value text-success">{formatCurrency(totals.paid)}</span>
+          <span className="stat-title">Total Amount Paid</span>
+          <span className="stat-value text-success">{formatCurrency(totalPaid)}</span>
         </div>
       </div>
     </div>
