@@ -3,13 +3,15 @@ import Dashboard from './components/Dashboard';
 import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
 import Login from './components/Login';
-import { Download, LayoutDashboard, Search, Printer } from 'lucide-react';
+import { Download, LayoutDashboard, Search, Printer, Copy, Check, Lock, LogOut } from 'lucide-react';
 import { db } from './firebaseConfig';
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('viewer'); // 'admin' | 'viewer'
+  const [copiedLink, setCopiedLink] = useState(false);
   const [workItems, setWorkItems] = useState([]);
   const [payments, setPayments] = useState([]);
   const [attachments, setAttachments] = useState([]);
@@ -18,8 +20,25 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    // 1. Check direct URL query param (e.g. ?view=client or ?mode=view)
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view') || params.get('mode') || params.get('role');
+
+    if (viewParam && ['client', 'view', 'viewer', 'readonly'].includes(viewParam.toLowerCase())) {
+      setIsAuthenticated(true);
+      setUserRole('viewer');
+      localStorage.setItem('isShakeelAuthenticated', 'true');
+      localStorage.setItem('shakeelUserRole', 'viewer');
+      return;
+    }
+
+    // 2. Check stored session
     const loggedIn = localStorage.getItem('isShakeelAuthenticated');
-    if (loggedIn === 'true') setIsAuthenticated(true);
+    const storedRole = localStorage.getItem('shakeelUserRole') || 'admin';
+    if (loggedIn === 'true') {
+      setIsAuthenticated(true);
+      setUserRole(storedRole);
+    }
   }, []);
 
   useEffect(() => {
@@ -30,10 +49,33 @@ function App() {
     }
   }, [isAuthenticated]);
 
-  const handleLogin = () => {
+  const handleLogin = (role = 'admin') => {
     setIsAuthenticated(true);
+    setUserRole(role);
     localStorage.setItem('isShakeelAuthenticated', 'true');
+    localStorage.setItem('shakeelUserRole', role);
   };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserRole('viewer');
+    localStorage.removeItem('isShakeelAuthenticated');
+    localStorage.removeItem('shakeelUserRole');
+    if (window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  };
+
+  const handleCopyClientLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}?view=client`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }).catch(() => {
+      prompt('Copy this secure Client View link:', url);
+    });
+  };
+
 
   const fetchWorkItems = async () => {
     try {
@@ -285,16 +327,64 @@ function App() {
     );
   }
 
+  const isAdmin = userRole === 'admin';
+
   return (
     <>
       <div className="header-actions no-print">
         <div>
-          <h1>Project Progress Dashboard</h1>
+          <div className="header-title-row">
+            <h1>Project Progress Dashboard</h1>
+            {isAdmin ? (
+              <span className="role-badge admin" title="Full editing and management permissions">
+                👑 Contractor Mode (Shakeel)
+              </span>
+            ) : (
+              <span className="role-badge viewer" title="Live viewing only — modifications disabled">
+                👁️ Owner / Client View (Read-Only)
+              </span>
+            )}
+          </div>
           <p className="subtitle">
-            {loading ? 'Syncing with cloud...' : 'Track materials, labor, and work progress'}
+            {loading
+              ? 'Syncing with cloud...'
+              : isAdmin
+                ? 'Track materials, labor, and work progress (Full Editing Access)'
+                : 'Live project status, payment history, and receipts (Read-Only)'}
           </p>
         </div>
         <div className="header-btns">
+          {isAdmin ? (
+            <>
+              <button
+                onClick={handleCopyClientLink}
+                className={`secondary-btn ${copiedLink ? 'copied-btn' : ''}`}
+                style={{ width: 'auto' }}
+                title="Copy secure link for Owner to view without editing rights"
+              >
+                {copiedLink ? <Check size={18} color="#10b981" /> : <Copy size={18} />}
+                <span>{copiedLink ? 'Client Link Copied!' : 'Copy Client Link'}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="secondary-btn"
+                style={{ width: 'auto' }}
+                title="Lock dashboard"
+              >
+                <LogOut size={18} /> Lock
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className="secondary-btn"
+              style={{ width: 'auto' }}
+              title="Contractor login to edit"
+            >
+              <Lock size={18} /> Contractor Login
+            </button>
+          )}
+
           <button onClick={handlePrint} className="secondary-btn" style={{ width: 'auto' }}>
             <Printer size={18} /> Print
           </button>
@@ -343,11 +433,12 @@ function App() {
         <p>Generated on: {new Date().toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
       </div>
 
-      <div className="app-container">
+      <div className={`app-container ${!isAdmin ? 'full-width' : ''}`}>
         <main className="main-content">
           <Dashboard items={filteredItems} selectedCategory={selectedCategory} />
           <WorkProgressTable
             items={filteredItems}
+            isAdmin={isAdmin}
             onDelete={handleDeleteItem}
             onEdit={handleEditItem}
             payments={payments}
@@ -363,9 +454,11 @@ function App() {
             onUpdateNotes={handleUpdateNotes}
           />
         </main>
-        <aside className="sidebar no-print">
-          <AddWorkItem onAddItem={handleAddItem} />
-        </aside>
+        {isAdmin && (
+          <aside className="sidebar no-print">
+            <AddWorkItem onAddItem={handleAddItem} />
+          </aside>
+        )}
       </div>
     </>
   );

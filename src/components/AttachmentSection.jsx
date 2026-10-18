@@ -44,7 +44,7 @@ const compressImage = (file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) =
   });
 };
 
-const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete }) => {
+const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete, isAdmin = true }) => {
   const [uploading, setUploading] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -53,7 +53,7 @@ const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete })
   const itemAttachments = attachments.filter(a => a.workItemId === workItemId);
 
   const handleFileProcess = async (files) => {
-    if (!files || files.length === 0) return;
+    if (!isAdmin || !files || files.length === 0) return;
     setUploading(true);
 
     try {
@@ -110,6 +110,7 @@ const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete })
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
+    if (!isAdmin) return;
     if (e.dataTransfer.files) {
       handleFileProcess(e.dataTransfer.files);
     }
@@ -124,48 +125,59 @@ const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete })
           <span className="count-pill">{itemAttachments.length}</span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="upload-trigger-btn"
-          disabled={uploading}
-        >
-          {uploading ? (
-            <>
-              <Loader2 size={14} className="spin" />
-              <span>Uploading...</span>
-            </>
-          ) : (
-            <>
-              <Plus size={14} />
-              <span>Add Proof / Receipt</span>
-            </>
-          )}
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="upload-trigger-btn"
+            disabled={uploading}
+          >
+            {uploading ? (
+              <>
+                <Loader2 size={14} className="spin" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Plus size={14} />
+                <span>Add Proof / Receipt</span>
+              </>
+            )}
+          </button>
+        )}
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={(e) => handleFileProcess(e.target.files)}
-          accept="image/*,application/pdf"
-          multiple
-          style={{ display: 'none' }}
-        />
+        {isAdmin && (
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => handleFileProcess(e.target.files)}
+            accept="image/*,application/pdf"
+            multiple
+            style={{ display: 'none' }}
+          />
+        )}
       </div>
 
-      {/* Drag & Drop Zone (if empty) */}
+      {/* Drag & Drop Zone or Read-Only Empty State */}
       {itemAttachments.length === 0 && !uploading && (
-        <div
-          className={`attachment-dropzone ${isDragOver ? 'drag-over' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload size={24} className="dropzone-icon" />
-          <p className="dropzone-title">Click or drag & drop check photos, receipts, or PDF invoices</p>
-          <p className="dropzone-sub">Supports JPG, PNG, WEBP and PDF documents</p>
-        </div>
+        isAdmin ? (
+          <div
+            className={`attachment-dropzone ${isDragOver ? 'drag-over' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload size={24} className="dropzone-icon" />
+            <p className="dropzone-title">Click or drag & drop check photos, receipts, or PDF invoices</p>
+            <p className="dropzone-sub">Supports JPG, PNG, WEBP and PDF documents</p>
+          </div>
+        ) : (
+          <div className="attachment-empty-state">
+            <Paperclip size={18} />
+            <span>No receipts or proof documents attached to this item.</span>
+          </div>
+        )
       )}
 
       {/* Attachment Grid */}
@@ -199,19 +211,21 @@ const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete })
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="attachment-delete-btn"
-                  title="Delete file"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Delete "${att.name}"?`)) {
-                      onDelete(att.id);
-                    }
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="attachment-delete-btn"
+                    title="Delete file"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Delete "${att.name}"?`)) {
+                        onDelete(att.id);
+                      }
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -224,6 +238,7 @@ const AttachmentSection = ({ workItemId, attachments = [], onUpload, onDelete })
           attachment={selectedAttachment}
           onClose={() => setSelectedAttachment(null)}
           onDelete={onDelete}
+          isAdmin={isAdmin}
         />
       )}
     </div>

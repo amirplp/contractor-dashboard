@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Download, Trash2, FileText, ExternalLink } from 'lucide-react';
 
-const AttachmentModal = ({ attachment, onClose, onDelete }) => {
+const AttachmentModal = ({ attachment, onClose, onDelete, isAdmin = true }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -75,7 +75,7 @@ const AttachmentModal = ({ attachment, onClose, onDelete }) => {
               <Download size={17} />
               <span>Download</span>
             </button>
-            {onDelete && (
+            {isAdmin && onDelete && (
               <button
                 onClick={() => {
                   if (window.confirm(`Delete "${attachment.name}"?`)) {

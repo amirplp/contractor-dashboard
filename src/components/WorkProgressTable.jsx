@@ -21,7 +21,8 @@ const SortableRow = ({
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
   confirmDelete, toggleExpand, handleAddPayment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes,
+  isAdmin = true
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   
@@ -66,62 +67,68 @@ const SortableRow = ({
         ) : (
           <>
             {/* Priority & Reorder Controls Column */}
-            <td className="reorder-td">
-              <div className="priority-control-group">
-                <span className="drag-handle" {...attributes} {...listeners} title="Drag to reorder">
-                  <GripVertical size={16} />
-                </span>
+            {isAdmin ? (
+              <td className="reorder-td">
+                <div className="priority-control-group">
+                  <span className="drag-handle" {...attributes} {...listeners} title="Drag to reorder">
+                    <GripVertical size={16} />
+                  </span>
 
-                {/* Priority Selector Pill */}
-                <div className="priority-select-wrap" title={`Rank #${index + 1} - Tap to change`}>
-                  <span className="priority-badge">#{index + 1}</span>
-                  <select
-                    className="priority-dropdown"
-                    value={index}
-                    onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
-                    title="Change priority position"
-                  >
-                    {Array.from({ length: totalCount }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i === 0 ? 'Position #1 (Top Priority)' : `Position #${i + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Priority Selector Pill */}
+                  <div className="priority-select-wrap" title={`Rank #${index + 1} - Tap to change`}>
+                    <span className="priority-badge">#{index + 1}</span>
+                    <select
+                      className="priority-dropdown"
+                      value={index}
+                      onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
+                      title="Change priority position"
+                    >
+                      {Array.from({ length: totalCount }, (_, i) => (
+                        <option key={i} value={i}>
+                          {i === 0 ? 'Position #1 (Top Priority)' : `Position #${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* 1-Tap Quick Action Buttons */}
-                <div className="quick-arrow-btns">
-                  {!isFirst && (
+                  {/* 1-Tap Quick Action Buttons */}
+                  <div className="quick-arrow-btns">
+                    {!isFirst && (
+                      <button
+                        type="button"
+                        className="reorder-arrow-btn top-btn"
+                        onClick={() => onMoveToTop(item.id)}
+                        title="Move to Top (Priority #1)"
+                      >
+                        <ChevronsUp size={13} />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className="reorder-arrow-btn top-btn"
-                      onClick={() => onMoveToTop(item.id)}
-                      title="Move to Top (Priority #1)"
+                      className="reorder-arrow-btn"
+                      onClick={() => onMoveUp(item.id)}
+                      disabled={isFirst}
+                      title="Move Up"
                     >
-                      <ChevronsUp size={13} />
+                      <ArrowUp size={13} />
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="reorder-arrow-btn"
-                    onClick={() => onMoveUp(item.id)}
-                    disabled={isFirst}
-                    title="Move Up"
-                  >
-                    <ArrowUp size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    className="reorder-arrow-btn"
-                    onClick={() => onMoveDown(item.id)}
-                    disabled={isLast}
-                    title="Move Down"
-                  >
-                    <ArrowDown size={13} />
-                  </button>
+                    <button
+                      type="button"
+                      className="reorder-arrow-btn"
+                      onClick={() => onMoveDown(item.id)}
+                      disabled={isLast}
+                      title="Move Down"
+                    >
+                      <ArrowDown size={13} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </td>
+              </td>
+            ) : (
+              <td style={{ width: '80px', textAlign: 'center' }}>
+                <span className="priority-badge">#{index + 1}</span>
+              </td>
+            )}
 
             {/* Item Title & Attachments Badge */}
             <td className="fw-600 clickable item-name-td" onClick={() => toggleExpand(item.id)}>
@@ -152,12 +159,14 @@ const SortableRow = ({
                 </div>
               </div>
             </td>
-            <td>
-              <div className="action-btns">
-                <button className="icon-btn edit-btn" onClick={() => startEdit(item)} title="Edit"><Pencil size={14} /></button>
-                <button className="icon-btn delete-btn" onClick={() => confirmDelete(item.id, item.item)} title="Delete"><Trash2 size={14} /></button>
-              </div>
-            </td>
+            {isAdmin && (
+              <td>
+                <div className="action-btns">
+                  <button className="icon-btn edit-btn" onClick={() => startEdit(item)} title="Edit"><Pencil size={14} /></button>
+                  <button className="icon-btn delete-btn" onClick={() => confirmDelete(item.id, item.item)} title="Delete"><Trash2 size={14} /></button>
+                </div>
+              </td>
+            )}
           </>
         )}
       </tr>
@@ -165,13 +174,14 @@ const SortableRow = ({
       {/* Expanded Row: Notes, Payments, and Attachments */}
       {isExpanded && !isEditing && (
         <tr className="expanded-row">
-          <td colSpan="12">
+          <td colSpan={isAdmin ? '11' : '10'}>
             <div className="expanded-content">
               {/* Editable Notes & Remarks Section */}
               <NotesSection
                 workItemId={item.id}
                 currentNotes={item.notes}
                 onSaveNotes={onUpdateNotes}
+                isAdmin={isAdmin}
               />
 
               {/* Attachments Section */}
@@ -180,6 +190,7 @@ const SortableRow = ({
                 attachments={attachments}
                 onUpload={onUploadAttachment}
                 onDelete={onDeleteAttachment}
+                isAdmin={isAdmin}
               />
 
               {/* Payment History Section */}
@@ -198,26 +209,28 @@ const SortableRow = ({
                 ) : (
                   <p className="no-payments">No payment records yet.</p>
                 )}
-                <div className="add-payment-row">
-                  <input
-                    type="number"
-                    placeholder="Amount (PKR)"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="inline-input"
-                    min="0"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Note / Cheque # (optional)"
-                    value={paymentNote}
-                    onChange={(e) => setPaymentNote(e.target.value)}
-                    className="inline-input"
-                  />
-                  <button className="add-payment-btn" onClick={() => handleAddPayment(item.id)}>
-                    <Plus size={14} /> Add Payment
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="add-payment-row">
+                    <input
+                      type="number"
+                      placeholder="Amount (PKR)"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="inline-input"
+                      min="0"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Note / Cheque # (optional)"
+                      value={paymentNote}
+                      onChange={(e) => setPaymentNote(e.target.value)}
+                      className="inline-input"
+                    />
+                    <button className="add-payment-btn" onClick={() => handleAddPayment(item.id)}>
+                      <Plus size={14} /> Add Payment
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </td>
@@ -234,7 +247,8 @@ const SortableMobileCard = ({
   paymentAmount, paymentNote, setPaymentAmount, setPaymentNote,
   formatCurrency, startEdit, cancelEdit, saveEdit, handleEditChange,
   confirmDelete, toggleExpand, handleAddPayment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes,
+  isAdmin = true
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   
@@ -253,57 +267,61 @@ const SortableMobileCard = ({
     <div ref={setNodeRef} style={style} className={`mobile-item-card ${isDragging ? 'is-dragging' : ''}`}>
       {/* Mobile Card Header with Priority Reorder Controls */}
       <div className="mobile-card-top-bar">
-        <div className="mobile-priority-cluster">
-          <span className="drag-handle-mobile" {...attributes} {...listeners} title="Drag to reorder">
-            <GripVertical size={18} />
-          </span>
+        {isAdmin ? (
+          <div className="mobile-priority-cluster">
+            <span className="drag-handle-mobile" {...attributes} {...listeners} title="Drag to reorder">
+              <GripVertical size={18} />
+            </span>
 
-          <div className="priority-select-wrap">
-            <span className="priority-badge">#{index + 1}</span>
-            <select
-              className="priority-dropdown"
-              value={index}
-              onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
-            >
-              {Array.from({ length: totalCount }, (_, i) => (
-                <option key={i} value={i}>
-                  {i === 0 ? 'Position #1 (Top)' : `Position #${i + 1}`}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="priority-select-wrap">
+              <span className="priority-badge">#{index + 1}</span>
+              <select
+                className="priority-dropdown"
+                value={index}
+                onChange={(e) => onMoveToPosition(item.id, Number(e.target.value))}
+              >
+                {Array.from({ length: totalCount }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i === 0 ? 'Position #1 (Top)' : `Position #${i + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="quick-arrow-btns">
-            {!isFirst && (
+            <div className="quick-arrow-btns">
+              {!isFirst && (
+                <button
+                  type="button"
+                  className="reorder-arrow-btn top-btn"
+                  onClick={() => onMoveToTop(item.id)}
+                  title="Move to Top (Priority 1)"
+                >
+                  <ChevronsUp size={14} />
+                </button>
+              )}
               <button
                 type="button"
-                className="reorder-arrow-btn top-btn"
-                onClick={() => onMoveToTop(item.id)}
-                title="Move to Top (Priority 1)"
+                className="reorder-arrow-btn"
+                onClick={() => onMoveUp(item.id)}
+                disabled={isFirst}
+                title="Move Up"
               >
-                <ChevronsUp size={14} />
+                <ArrowUp size={14} />
               </button>
-            )}
-            <button
-              type="button"
-              className="reorder-arrow-btn"
-              onClick={() => onMoveUp(item.id)}
-              disabled={isFirst}
-              title="Move Up"
-            >
-              <ArrowUp size={14} />
-            </button>
-            <button
-              type="button"
-              className="reorder-arrow-btn"
-              onClick={() => onMoveDown(item.id)}
-              disabled={isLast}
-              title="Move Down"
-            >
-              <ArrowDown size={14} />
-            </button>
+              <button
+                type="button"
+                className="reorder-arrow-btn"
+                onClick={() => onMoveDown(item.id)}
+                disabled={isLast}
+                title="Move Down"
+              >
+                <ArrowDown size={14} />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <span className="priority-badge">#{index + 1}</span>
+        )}
 
         <span className="company-badge">{item.company}</span>
       </div>
@@ -364,6 +382,7 @@ const SortableMobileCard = ({
                 workItemId={item.id}
                 currentNotes={item.notes}
                 onSaveNotes={onUpdateNotes}
+                isAdmin={isAdmin}
               />
 
               {/* Attachments */}
@@ -372,6 +391,7 @@ const SortableMobileCard = ({
                 attachments={attachments}
                 onUpload={onUploadAttachment}
                 onDelete={onDeleteAttachment}
+                isAdmin={isAdmin}
               />
 
               {/* Payment History */}
@@ -390,19 +410,23 @@ const SortableMobileCard = ({
                 ) : (
                   <p className="no-payments">No payment records yet.</p>
                 )}
-                <div className="add-payment-col">
-                  <input type="number" placeholder="Amount (PKR)" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} min="0" />
-                  <input type="text" placeholder="Note (optional)" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
-                  <button onClick={() => handleAddPayment(item.id)}><Plus size={14} /> Add Payment</button>
-                </div>
+                {isAdmin && (
+                  <div className="add-payment-col">
+                    <input type="number" placeholder="Amount (PKR)" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} min="0" />
+                    <input type="text" placeholder="Note (optional)" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
+                    <button onClick={() => handleAddPayment(item.id)}><Plus size={14} /> Add Payment</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          <div className="mobile-actions">
-            <button onClick={() => startEdit(item)} className="mobile-edit-btn"><Pencil size={14} /> Edit</button>
-            <button onClick={() => confirmDelete(item.id, item.item)} className="mobile-delete-btn"><Trash2 size={14} /> Delete</button>
-          </div>
+          {isAdmin && (
+            <div className="mobile-actions">
+              <button onClick={() => startEdit(item)} className="mobile-edit-btn"><Pencil size={14} /> Edit</button>
+              <button onClick={() => confirmDelete(item.id, item.item)} className="mobile-delete-btn"><Trash2 size={14} /> Delete</button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -413,7 +437,8 @@ const SortableMobileCard = ({
 const WorkProgressTable = ({
   items, onDelete, onEdit, payments, onAddPayment, onReorder,
   attachments = [], onUploadAttachment, onDeleteAttachment,
-  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
+  onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes,
+  isAdmin = true
 }) => {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -444,6 +469,7 @@ const WorkProgressTable = ({
   };
 
   const handleDragEnd = (event) => {
+    if (!isAdmin) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       onReorder(active.id, over.id);
@@ -466,7 +492,8 @@ const WorkProgressTable = ({
       saveEdit, handleEditChange, confirmDelete, toggleExpand,
       handleAddPayment: handleAddPaymentLocal,
       attachments, onUploadAttachment, onDeleteAttachment,
-      onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes
+      onMoveUp, onMoveDown, onMoveToTop, onMoveToPosition, onUpdateNotes,
+      isAdmin
     };
   };
 
@@ -479,7 +506,7 @@ const WorkProgressTable = ({
             <table className="work-table">
               <thead>
                 <tr>
-                  <th style={{ width: '130px', textAlign: 'center' }}>PRIORITY</th>
+                  <th style={{ width: isAdmin ? '130px' : '80px', textAlign: 'center' }}>PRIORITY</th>
                   <th>ITEM</th>
                   <th>COMPANY</th>
                   <th>MATERIAL COST</th>
@@ -489,7 +516,7 @@ const WorkProgressTable = ({
                   <th>LABOUR COST</th>
                   <th>LABOUR PAID</th>
                   <th>PROGRESS</th>
-                  <th></th>
+                  {isAdmin && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -513,3 +540,4 @@ const WorkProgressTable = ({
 };
 
 export default WorkProgressTable;
+
