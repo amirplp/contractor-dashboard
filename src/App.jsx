@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
-import ContractorLoginModal from './components/ContractorLoginModal';
-import { Download, LayoutDashboard, Search, Printer, Copy, Check, Lock, LogOut } from 'lucide-react';
+import AccessGate from './components/AccessGate';
+import AccessManagerModal from './components/AccessManagerModal';
+import { Download, LayoutDashboard, Search, Printer, Copy, Check, LogOut, Bell } from 'lucide-react';
+
 import { db } from './firebaseConfig';
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
 function App() {
-  const [userRole, setUserRole] = useState('viewer'); // 'admin' | 'viewer'
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // null | { role: 'admin' | 'viewer', email: string }
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
   const [workItems, setWorkItems] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -20,53 +23,72 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // 1. Immediately fetch public read-only project data
-    fetchWorkItems();
-    fetchPayments();
-    fetchAttachments();
-
-    // 2. Check if a direct query parameter requests client view explicitly
-    const params = new URLSearchParams(window.location.search);
-    const viewParam = params.get('view') || params.get('mode') || params.get('role');
-    if (viewParam && ['client', 'view', 'viewer', 'readonly'].includes(viewParam.toLowerCase())) {
-      setUserRole('viewer');
-      localStorage.setItem('shakeelUserRole', 'viewer');
-      return;
-    }
-
-    // 3. Check if Shakeel is already authenticated as contractor/admin
+    // 1. Check if Shakeel is already logged in as contractor
     const storedRole = localStorage.getItem('shakeelUserRole');
-    if (storedRole === 'admin') {
-      setUserRole('admin');
-    } else {
-      setUserRole('viewer');
+    const storedEmail = localStorage.getItem('shakeelUserEmail');
+    const approvedViewer = localStorage.getItem('approvedViewerEmail');
+
+    if (storedRole === 'admin' && storedEmail) {
+      setCurrentUser({ role: 'admin', email: storedEmail });
+      fetchWorkItems();
+      fetchPayments();
+      fetchAttachments();
+    } else if (approvedViewer) {
+      setCurrentUser({ role: 'viewer', email: approvedViewer });
+      fetchWorkItems();
+      fetchPayments();
+      fetchAttachments();
     }
   }, []);
 
-  const handleLoginSuccess = (email) => {
-    setUserRole('admin');
+  // Listen in real time for pending access requests when Shakeel is Admin
+  useEffect(() => {
+    if (currentUser?.role !== 'admin') return;
+    const q = query(collection(db, 'access_requests'), where('status', '==', 'pending'));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setPendingRequestsCount(snapshot.docs.length);
+    }, (err) => console.log('Requests listener:', err));
+    return () => unsub();
+  }, [currentUser]);
+
+  const handleApprovedViewer = (email) => {
+    setCurrentUser({ role: 'viewer', email });
+    localStorage.setItem('approvedViewerEmail', email);
+    localStorage.setItem('shakeelUserRole', 'viewer');
+    fetchWorkItems();
+    fetchPayments();
+    fetchAttachments();
+  };
+
+  const handleContractorLogin = (email) => {
+    setCurrentUser({ role: 'admin', email });
     localStorage.setItem('shakeelUserRole', 'admin');
     localStorage.setItem('shakeelUserEmail', email);
+    fetchWorkItems();
+    fetchPayments();
+    fetchAttachments();
   };
 
   const handleLogout = () => {
-    setUserRole('viewer');
-    localStorage.setItem('shakeelUserRole', 'viewer');
+    setCurrentUser(null);
+    localStorage.removeItem('shakeelUserRole');
     localStorage.removeItem('shakeelUserEmail');
+    localStorage.removeItem('approvedViewerEmail');
     if (window.location.search) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   };
 
   const handleCopyClientLink = () => {
-    const url = `${window.location.origin}${window.location.pathname}?view=client`;
+    const url = window.location.origin;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     }).catch(() => {
-      prompt('Copy this secure Client View link:', url);
+      prompt('Copy this secure Project Dashboard link:', url);
     });
   };
+
 
 
 
@@ -300,6 +322,16 @@ function App() {
     window.print();
   };
 
+  // If not authenticated (neither approved viewer nor contractor admin), show the secure Access Gate
+  if (!currentUser) {
+    return (
+      <AccessGate
+        onApprovedViewer={handleApprovedViewer}
+        onContractorLogin={handleContractorLogin}
+      />
+    );
+  }
+
   const categories = ['All', ...new Set(workItems.map(wi => wi.item.toUpperCase()))];
 
   let filteredItems = selectedCategory === 'All'
@@ -316,7 +348,7 @@ function App() {
     );
   }
 
-  const isAdmin = userRole === 'admin';
+  const isAdmin = currentUser.role === 'admin';
 
   return (
     <>
@@ -329,8 +361,8 @@ function App() {
                 👑 Contractor Mode (Shakeel)
               </span>
             ) : (
-              <span className="role-badge viewer" title="Live viewing only — modifications disabled">
-                👁️ Owner / Client View (Read-Only)
+              <span className="role-badge viewer" title={`Read-only access granted for: ${currentUser.email}`}>
+                👁️ Owner / Client View ({currentUser.email})
               </span>
             )}
           </div>
@@ -346,31 +378,41 @@ function App() {
           {isAdmin ? (
             <>
               <button
+                onClick={() => setShowAccessModal(true)}
+                className={`secondary-btn ${pendingRequestsCount > 0 ? 'alert-badge-btn' : ''}`}
+                style={{ width: 'auto' }}
+                title="View and approve visitor access requests"
+              >
+                <Bell size={18} />
+                <span>Access Requests</span>
+                {pendingRequestsCount > 0 && <span className="notification-bubble">{pendingRequestsCount}</span>}
+              </button>
+              <button
                 onClick={handleCopyClientLink}
                 className={`secondary-btn ${copiedLink ? 'copied-btn' : ''}`}
                 style={{ width: 'auto' }}
-                title="Copy secure link for Owner to view without editing rights"
+                title="Copy secure link for Owner to view"
               >
                 {copiedLink ? <Check size={18} color="#10b981" /> : <Copy size={18} />}
-                <span>{copiedLink ? 'Client Link Copied!' : 'Copy Client Link'}</span>
+                <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
               </button>
               <button
                 onClick={handleLogout}
                 className="secondary-btn"
                 style={{ width: 'auto' }}
-                title="Lock dashboard (Switch to View-Only)"
+                title="Lock dashboard (Switch to Gatekeeper Wall)"
               >
                 <LogOut size={18} /> Lock
               </button>
             </>
           ) : (
             <button
-              onClick={() => setShowLoginModal(true)}
+              onClick={handleLogout}
               className="secondary-btn"
               style={{ width: 'auto' }}
-              title="Contractor login to edit"
+              title="Exit dashboard"
             >
-              <Lock size={18} /> Contractor Login
+              <LogOut size={18} /> Exit
             </button>
           )}
 
@@ -450,13 +492,15 @@ function App() {
         )}
       </div>
 
-      <ContractorLoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onLoginSuccess={handleLoginSuccess}
-      />
+      {isAdmin && (
+        <AccessManagerModal
+          isOpen={showAccessModal}
+          onClose={() => setShowAccessModal(false)}
+        />
+      )}
     </>
   );
 }
 
 export default App;
+

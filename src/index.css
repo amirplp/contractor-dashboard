@@ -1308,4 +1308,382 @@ button.icon-btn.edit-btn:hover { background: #eff6ff; color: var(--accent); }
   color: var(--text-main);
 }
 
+/* ==========================================================================
+   Gatekeeper Wall & Access Request Styles
+   ========================================================================== */
+.gatekeeper-card {
+  max-width: 480px !important;
+  padding: 2.5rem 2rem !important;
+}
+
+.gate-tab-switcher {
+  display: flex;
+  width: 100%;
+  background: #f1f5f9;
+  border-radius: var(--radius-md);
+  padding: 0.3rem;
+  margin-bottom: 1.5rem;
+  gap: 0.35rem;
+}
+
+.gate-tab-btn {
+  flex: 1;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.65rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  width: auto;
+}
+
+.gate-tab-btn.active {
+  background: #ffffff;
+  color: var(--text-main);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.gate-tab-body {
+  width: 100%;
+}
+
+.inline-code-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.code-submit-btn {
+  background: #f1f5f9;
+  color: var(--text-main);
+  border: 1px solid #cbd5e1;
+  width: auto;
+  padding: 0 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.code-submit-btn:hover {
+  background: #e2e8f0;
+}
+
+.access-pending-box {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pending-icon-wrap {
+  background: #eff6ff;
+  border-radius: 50%;
+  padding: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.access-pending-box h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.pending-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.pending-notice {
+  background: #eff6ff;
+  border-left: 3px solid var(--accent);
+  color: #1e40af;
+  padding: 0.65rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+
+.pending-code-card {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.code-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.code-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  display: block;
+}
+
+.code-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.contractor-login-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Access Manager Modal Styles
+   ========================================================================== */
+.access-manager-modal {
+  max-width: 650px !important;
+  width: 95% !important;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.notification-bubble {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  margin-left: 0.35rem;
+}
+
+.alert-badge-btn {
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+  background: #fef2f2 !important;
+}
+
+.access-toast-msg {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #15803d;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.pre-approve-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pre-approve-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.pre-approve-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.pre-approve-form {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pre-approve-submit-btn {
+  background: var(--accent);
+  color: #ffffff;
+  width: auto;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 0 1.25rem;
+}
+
+.access-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.access-section-header h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.access-empty-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.access-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.access-card.pending-card {
+  border-left: 3.5px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.access-card.approved-card {
+  border-left: 3.5px solid #10b981;
+}
+
+.access-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.access-user-email {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.approved-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+  margin-left: 0.35rem;
+}
+
+.access-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.passcode-chip {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #0f172a;
+}
+
+.access-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.approve-action-btn {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  width: auto;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.approve-action-btn:hover {
+  background: #059669;
+}
+
+.reject-action-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  width: auto;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.reject-action-btn:hover {
+  background: #fee2e2;
+}
+
+.revoke-action-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid #cbd5e1;
+  width: auto;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.revoke-action-btn:hover {
+  background: #fee2e2;
+  color: var(--danger);
+  border-color: #fecaca;
+}
+
+
 
