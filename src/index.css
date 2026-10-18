@@ -1227,3 +1227,85 @@ button.icon-btn.edit-btn:hover { background: #eff6ff; color: var(--accent); }
   font-size: 0.85rem;
 }
 
+/* Contractor Login Modal */
+.contractor-login-modal {
+  max-width: 440px !important;
+  width: 90% !important;
+}
+
+.contractor-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0 0.5rem 0;
+}
+
+.contractor-login-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  background: #eff6ff;
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 0.85rem;
+  border-radius: 4px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  padding-left: 2.5rem !important;
+  text-align: left !important;
+  letter-spacing: normal !important;
+}
+
+.login-error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.login-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.login-submit-btn {
+  background: var(--accent);
+  color: white;
+  padding: 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.login-cancel-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid #cbd5e1;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+}
+
+.login-cancel-btn:hover {
+  background: #f8fafc;
+  color: var(--text-main);
+}
+
+

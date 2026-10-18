@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
-import Login from './components/Login';
+import ContractorLoginModal from './components/ContractorLoginModal';
 import { Download, LayoutDashboard, Search, Printer, Copy, Check, Lock, LogOut } from 'lucide-react';
 import { db } from './firebaseConfig';
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState('viewer'); // 'admin' | 'viewer'
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [workItems, setWorkItems] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -20,47 +20,39 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // 1. Check direct URL query param (e.g. ?view=client or ?mode=view)
+    // 1. Immediately fetch public read-only project data
+    fetchWorkItems();
+    fetchPayments();
+    fetchAttachments();
+
+    // 2. Check if a direct query parameter requests client view explicitly
     const params = new URLSearchParams(window.location.search);
     const viewParam = params.get('view') || params.get('mode') || params.get('role');
-
     if (viewParam && ['client', 'view', 'viewer', 'readonly'].includes(viewParam.toLowerCase())) {
-      setIsAuthenticated(true);
       setUserRole('viewer');
-      localStorage.setItem('isShakeelAuthenticated', 'true');
       localStorage.setItem('shakeelUserRole', 'viewer');
       return;
     }
 
-    // 2. Check stored session
-    const loggedIn = localStorage.getItem('isShakeelAuthenticated');
-    const storedRole = localStorage.getItem('shakeelUserRole') || 'admin';
-    if (loggedIn === 'true') {
-      setIsAuthenticated(true);
-      setUserRole(storedRole);
+    // 3. Check if Shakeel is already authenticated as contractor/admin
+    const storedRole = localStorage.getItem('shakeelUserRole');
+    if (storedRole === 'admin') {
+      setUserRole('admin');
+    } else {
+      setUserRole('viewer');
     }
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchWorkItems();
-      fetchPayments();
-      fetchAttachments();
-    }
-  }, [isAuthenticated]);
-
-  const handleLogin = (role = 'admin') => {
-    setIsAuthenticated(true);
-    setUserRole(role);
-    localStorage.setItem('isShakeelAuthenticated', 'true');
-    localStorage.setItem('shakeelUserRole', role);
+  const handleLoginSuccess = (email) => {
+    setUserRole('admin');
+    localStorage.setItem('shakeelUserRole', 'admin');
+    localStorage.setItem('shakeelUserEmail', email);
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     setUserRole('viewer');
-    localStorage.removeItem('isShakeelAuthenticated');
-    localStorage.removeItem('shakeelUserRole');
+    localStorage.setItem('shakeelUserRole', 'viewer');
+    localStorage.removeItem('shakeelUserEmail');
     if (window.location.search) {
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -75,6 +67,7 @@ function App() {
       prompt('Copy this secure Client View link:', url);
     });
   };
+
 
 
   const fetchWorkItems = async () => {
@@ -307,10 +300,6 @@ function App() {
     window.print();
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   const categories = ['All', ...new Set(workItems.map(wi => wi.item.toUpperCase()))];
 
   let filteredItems = selectedCategory === 'All'
@@ -369,14 +358,14 @@ function App() {
                 onClick={handleLogout}
                 className="secondary-btn"
                 style={{ width: 'auto' }}
-                title="Lock dashboard"
+                title="Lock dashboard (Switch to View-Only)"
               >
                 <LogOut size={18} /> Lock
               </button>
             </>
           ) : (
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLoginModal(true)}
               className="secondary-btn"
               style={{ width: 'auto' }}
               title="Contractor login to edit"
@@ -460,6 +449,12 @@ function App() {
           </aside>
         )}
       </div>
+
+      <ContractorLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </>
   );
 }
