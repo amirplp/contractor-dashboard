@@ -4,7 +4,7 @@ import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
 import AccessGate from './components/AccessGate';
 import AccessManagerModal from './components/AccessManagerModal';
-import { Download, LayoutDashboard, Search, Printer, Copy, Check, LogOut, Bell, FileText } from 'lucide-react';
+import { Download, LayoutDashboard, Search, Printer, Copy, Check, LogOut, Bell, FileText, Loader2 } from 'lucide-react';
 import { generatePDFReport } from './utils/generatePDFReport';
 import { db } from './firebaseConfig';
 
@@ -16,6 +16,7 @@ function App() {
   const [showAccessModal, setShowAccessModal] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [workItems, setWorkItems] = useState([]);
   const [payments, setPayments] = useState([]);
   const [attachments, setAttachments] = useState([]);
@@ -323,12 +324,42 @@ function App() {
     window.print();
   };
 
-  const handleDownloadPDF = () => {
-    generatePDFReport({
-      items: filteredItems,
-      payments,
-      attachments
-    });
+  const handleDownloadPDF = async () => {
+    if (workItems.length === 0) {
+      alert('No work items found to generate report.');
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+    try {
+      // Small pause to let React render the spinner state on the button
+      await new Promise(r => setTimeout(r, 60));
+
+      const isFiltered = filteredItems.length !== workItems.length;
+      let filterInfo = null;
+      if (isFiltered) {
+        if (selectedCategory !== 'All' && searchQuery.trim()) {
+          filterInfo = `Category: ${selectedCategory}, Search: "${searchQuery.trim()}"`;
+        } else if (selectedCategory !== 'All') {
+          filterInfo = `Category: ${selectedCategory}`;
+        } else {
+          filterInfo = `Search: "${searchQuery.trim()}"`;
+        }
+      }
+
+      generatePDFReport({
+        items: filteredItems,
+        totalCount: workItems.length,
+        filterInfo,
+        payments,
+        attachments
+      });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('An error occurred while generating the PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   // If not authenticated (neither approved viewer nor contractor admin), show the secure Access Gate
@@ -429,9 +460,20 @@ function App() {
             onClick={handleDownloadPDF}
             className="pdf-download-btn"
             style={{ width: 'auto' }}
+            disabled={isGeneratingPDF}
             title="Download comprehensive PDF report with all minute details"
           >
-            <FileText size={18} /> Download Full PDF
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 size={18} className="spin" />
+                <span>Generating PDF...</span>
+              </>
+            ) : (
+              <>
+                <FileText size={18} />
+                <span>Download Full PDF</span>
+              </>
+            )}
           </button>
           <button onClick={handlePrint} className="secondary-btn" style={{ width: 'auto' }}>
             <Printer size={18} /> Print
