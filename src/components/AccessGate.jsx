@@ -140,7 +140,7 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
         const reqData = snapshot.docs[0].data();
         onApprovedViewer(reqData.email);
       } else {
-        setCodeError('Invalid passcode. Please request access or ask Shakeel for approval.');
+        setCodeError('Invalid passcode. Please request access or ask the contractor for approval.');
       }
     } catch (err) {
       console.error('Error checking code:', err);
@@ -162,12 +162,12 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
       email === 'aamirhayatplp@gmail.com';
 
     if (!isShakeelEmail) {
-      setContractorError("Access denied. Only Shakeel's email (nasirshakeel333@gmail.com) can log in as Contractor.");
+      setContractorError('Access denied. Invalid contractor email or credentials.');
       return;
     }
 
     if (pass !== SHAKEEL_PASSCODE) {
-      setContractorError('Incorrect passcode. Please enter Shakeel’s 6-digit passcode.');
+      setContractorError('Incorrect passcode. Please try again.');
       return;
     }
 
@@ -202,7 +202,7 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
             onClick={() => { setActiveTab('contractor'); setContractorError(''); }}
           >
             <ShieldCheck size={16} />
-            <span>Contractor (Shakeel)</span>
+            <span>Contractor</span>
           </button>
         </div>
 
@@ -216,16 +216,16 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
                 </div>
                 <h3>Access Request Sent!</h3>
                 <p className="pending-text">
-                  Your request has been sent to <strong>Shakeel</strong> ({SHAKEEL_EMAIL}).
+                  Your request has been submitted to the Contractor for review.
                 </p>
                 <div className="pending-notice">
-                  <span>⏳ Waiting for Shakeel to approve... This page will <strong>unlock automatically</strong> once approved.</span>
+                  <span>⏳ Waiting for approval... This page will <strong>unlock automatically</strong> once approved.</span>
                 </div>
 
                 <div className="pending-code-card">
                   <span className="code-label">Your Request Passcode:</span>
                   <span className="code-value">{generatedPasscode}</span>
-                  <p className="code-hint">You can also message Shakeel this passcode to get instant approval.</p>
+                  <p className="code-hint">You can also share this passcode with the contractor to get quick approval.</p>
                 </div>
 
                 <button
@@ -294,17 +294,17 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
           </div>
         )}
 
-        {/* TAB 2: CONTRACTOR LOGIN (SHAKEEL) */}
+        {/* TAB 2: CONTRACTOR LOGIN */}
         {activeTab === 'contractor' && (
           <div className="gate-tab-body">
             <form onSubmit={handleContractorSubmit} className="login-form">
               <div className="form-group" style={{ textAlign: 'left', marginBottom: '0.75rem' }}>
-                <label className="login-input-label">Shakeel's Email</label>
+                <label className="login-input-label">Contractor Email</label>
                 <div className="input-with-icon">
                   <Mail size={18} className="input-icon" />
                   <input
                     type="email"
-                    placeholder="nasirshakeel333@gmail.com"
+                    placeholder="Enter contractor email..."
                     value={contractorEmail}
                     onChange={(e) => { setContractorEmail(e.target.value); setContractorError(''); }}
                     required
@@ -319,7 +319,7 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
                   <Lock size={18} className="input-icon" />
                   <input
                     type="password"
-                    placeholder="Enter passcode (112233)"
+                    placeholder="Enter passcode..."
                     value={contractorPasscode}
                     onChange={(e) => { setContractorPasscode(e.target.value); setContractorError(''); }}
                     required
@@ -331,7 +331,7 @@ const AccessGate = ({ onApprovedViewer, onContractorLogin }) => {
 
               <button type="submit" className="login-btn contractor-btn">
                 <ShieldCheck size={18} />
-                <span>Unlock Full Editor (Shakeel)</span>
+                <span>Unlock Contractor Mode</span>
               </button>
 
               <p className="contractor-login-hint">

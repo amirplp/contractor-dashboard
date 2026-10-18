@@ -4,9 +4,10 @@ import AddWorkItem from './components/AddWorkItem';
 import WorkProgressTable from './components/WorkProgressTable';
 import AccessGate from './components/AccessGate';
 import AccessManagerModal from './components/AccessManagerModal';
-import { Download, LayoutDashboard, Search, Printer, Copy, Check, LogOut, Bell } from 'lucide-react';
-
+import { Download, LayoutDashboard, Search, Printer, Copy, Check, LogOut, Bell, FileText } from 'lucide-react';
+import { generatePDFReport } from './utils/generatePDFReport';
 import { db } from './firebaseConfig';
+
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
@@ -322,6 +323,14 @@ function App() {
     window.print();
   };
 
+  const handleDownloadPDF = () => {
+    generatePDFReport({
+      items: filteredItems,
+      payments,
+      attachments
+    });
+  };
+
   // If not authenticated (neither approved viewer nor contractor admin), show the secure Access Gate
   if (!currentUser) {
     return (
@@ -416,6 +425,14 @@ function App() {
             </button>
           )}
 
+          <button
+            onClick={handleDownloadPDF}
+            className="pdf-download-btn"
+            style={{ width: 'auto' }}
+            title="Download comprehensive PDF report with all minute details"
+          >
+            <FileText size={18} /> Download Full PDF
+          </button>
           <button onClick={handlePrint} className="secondary-btn" style={{ width: 'auto' }}>
             <Printer size={18} /> Print
           </button>
@@ -424,6 +441,7 @@ function App() {
           </button>
         </div>
       </div>
+
 
       {workItems.length > 0 && (
         <div className="controls-row no-print">
