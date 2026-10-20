@@ -38,6 +38,11 @@ const SortableRow = ({
   const isFirst = index === 0;
   const isLast = index === totalCount - 1;
 
+  const totalCost = (Number(item.material_cost) || 0) + (Number(item.labor_cost) || 0);
+  const totalPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
+  const paymentPct = totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : (totalPaid > 0 ? 100 : 0);
+  const workProgress = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
+
   return (
     <React.Fragment>
       <tr ref={setNodeRef} style={style} className={`${isExpanded ? 'row-expanded' : ''} ${isDragging ? 'is-dragging' : ''}`}>
@@ -46,17 +51,40 @@ const SortableRow = ({
             <td style={{ width: '80px', textAlign: 'center' }}>
               <span className="priority-badge">#{index + 1}</span>
             </td>
-            <td><input className="inline-input" value={editData.item} onChange={(e) => handleEditChange('item', e.target.value)} /></td>
-            <td><input className="inline-input" value={editData.company} onChange={(e) => handleEditChange('company', e.target.value)} /></td>
-            <td><input className="inline-input" type="number" value={editData.material_cost} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></td>
-            <td><input className="inline-input" type="number" value={editData.amount_paid} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></td>
+            <td><input className="inline-input" value={editData.item || ''} onChange={(e) => handleEditChange('item', e.target.value)} /></td>
+            <td><input className="inline-input" value={editData.company || ''} onChange={(e) => handleEditChange('company', e.target.value)} /></td>
+            <td><input className="inline-input" type="number" value={editData.material_cost ?? ''} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></td>
+            <td><input className="inline-input" type="number" value={editData.amount_paid ?? ''} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></td>
             <td className={balance > 0 ? 'text-danger' : 'text-success'}>
               {formatCurrency((editData.material_cost || 0) + (editData.labor_cost || 0) - (editData.amount_paid || 0) - (editData.labor_paid || 0))}
             </td>
-            <td><input className="inline-input" value={editData.labor_name} onChange={(e) => handleEditChange('labor_name', e.target.value)} /></td>
-            <td><input className="inline-input" type="number" value={editData.labor_cost} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></td>
-            <td><input className="inline-input" type="number" value={editData.labor_paid || 0} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></td>
-            <td><input className="inline-input" type="number" value={editData.progress} min="0" max="100" onChange={(e) => handleEditChange('progress', Math.min(100, Number(e.target.value)))} /></td>
+            <td><input className="inline-input" value={editData.labor_name || ''} onChange={(e) => handleEditChange('labor_name', e.target.value)} /></td>
+            <td><input className="inline-input" type="number" value={editData.labor_cost ?? ''} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></td>
+            <td><input className="inline-input" type="number" value={editData.labor_paid ?? ''} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></td>
+            <td style={{ textAlign: 'center' }}>
+              <span className="auto-calc-badge payment-badge" title="Auto-calculated from payments">
+                {(() => {
+                  const c = (Number(editData.material_cost) || 0) + (Number(editData.labor_cost) || 0);
+                  const p = (Number(editData.amount_paid) || 0) + (Number(editData.labor_paid) || 0);
+                  return c > 0 ? Math.min(100, Math.round((p / c) * 100)) : (p > 0 ? 100 : 0);
+                })()}%
+              </span>
+            </td>
+            <td>
+              <input
+                className="inline-input"
+                type="number"
+                value={editData.work_progress ?? editData.progress ?? 0}
+                min="0"
+                max="100"
+                title="Enter actual physical work completion percentage (0-100)"
+                onChange={(e) => {
+                  const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                  handleEditChange('work_progress', val);
+                  handleEditChange('progress', val);
+                }}
+              />
+            </td>
             <td>
               <div className="action-btns">
                 <button className="icon-btn save-btn" onClick={saveEdit} title="Save"><Check size={16} /></button>
@@ -152,10 +180,18 @@ const SortableRow = ({
             <td>{formatCurrency(item.labor_cost)}</td>
             <td>{formatCurrency(item.labor_paid)}</td>
             <td>
-              <div className="progress-cell">
-                <span>{item.progress}%</span>
+              <div className="progress-cell payment-progress-cell" title={`Payment Progress: ${paymentPct}% (${formatCurrency(totalPaid)} of ${formatCurrency(totalCost)})`}>
+                <span className="progress-badge payment-badge">{paymentPct}%</span>
                 <div className="progress-bar-bg">
-                  <div className="progress-bar-fill" style={{ width: `${item.progress}%` }}></div>
+                  <div className="progress-bar-fill payment-fill" style={{ width: `${paymentPct}%` }}></div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div className="progress-cell work-progress-cell" title={`Work Done: ${workProgress}% physical progress on site`}>
+                <span className="progress-badge work-badge">{workProgress}%</span>
+                <div className="progress-bar-bg">
+                  <div className="progress-bar-fill work-fill" style={{ width: `${workProgress}%` }}></div>
                 </div>
               </div>
             </td>
@@ -174,7 +210,7 @@ const SortableRow = ({
       {/* Expanded Row: Notes, Payments, and Attachments */}
       {isExpanded && !isEditing && (
         <tr className="expanded-row">
-          <td colSpan={isAdmin ? '11' : '10'}>
+          <td colSpan={isAdmin ? '12' : '11'}>
             <div className="expanded-content">
               {/* Editable Notes & Remarks Section */}
               <NotesSection
@@ -263,6 +299,11 @@ const SortableMobileCard = ({
   const isFirst = index === 0;
   const isLast = index === totalCount - 1;
 
+  const totalCost = (Number(item.material_cost) || 0) + (Number(item.labor_cost) || 0);
+  const totalPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
+  const paymentPct = totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : (totalPaid > 0 ? 100 : 0);
+  const workProgress = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
+
   return (
     <div ref={setNodeRef} style={style} className={`mobile-item-card ${isDragging ? 'is-dragging' : ''}`}>
       {/* Mobile Card Header with Priority Reorder Controls */}
@@ -342,18 +383,43 @@ const SortableMobileCard = ({
       {isEditing ? (
         <div className="mobile-edit-form">
           <div className="form-row">
-            <div className="form-group"><label>Item</label><input value={editData.item} onChange={(e) => handleEditChange('item', e.target.value)} /></div>
-            <div className="form-group"><label>Company</label><input value={editData.company} onChange={(e) => handleEditChange('company', e.target.value)} /></div>
+            <div className="form-group"><label>Item</label><input value={editData.item || ''} onChange={(e) => handleEditChange('item', e.target.value)} /></div>
+            <div className="form-group"><label>Company</label><input value={editData.company || ''} onChange={(e) => handleEditChange('company', e.target.value)} /></div>
           </div>
           <div className="form-row">
-            <div className="form-group"><label>Material Cost</label><input type="number" value={editData.material_cost} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></div>
-            <div className="form-group"><label>Amount Paid</label><input type="number" value={editData.amount_paid} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></div>
+            <div className="form-group"><label>Material Cost</label><input type="number" value={editData.material_cost ?? ''} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></div>
+            <div className="form-group"><label>Amount Paid</label><input type="number" value={editData.amount_paid ?? ''} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></div>
           </div>
           <div className="form-row">
-            <div className="form-group"><label>Labor Cost</label><input type="number" value={editData.labor_cost} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></div>
-            <div className="form-group"><label>Labor Paid</label><input type="number" value={editData.labor_paid || 0} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></div>
+            <div className="form-group"><label>Labor ({editData.labor_name || 'Labor'}) Cost</label><input type="number" value={editData.labor_cost ?? ''} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></div>
+            <div className="form-group"><label>Labor Paid</label><input type="number" value={editData.labor_paid ?? ''} onChange={(e) => handleEditChange('labor_paid', Number(e.target.value))} /></div>
           </div>
-          <div className="form-group"><label>Progress %</label><input type="number" value={editData.progress} min="0" max="100" onChange={(e) => handleEditChange('progress', Math.min(100, Number(e.target.value)))} /></div>
+          <div className="form-group">
+            <label>Payment % (Auto-calculated)</label>
+            <div style={{ padding: '0.25rem 0' }}>
+              <span className="auto-calc-badge payment-badge" title="Auto-calculated from payments">
+                {(() => {
+                  const c = (Number(editData.material_cost) || 0) + (Number(editData.labor_cost) || 0);
+                  const p = (Number(editData.amount_paid) || 0) + (Number(editData.labor_paid) || 0);
+                  return c > 0 ? Math.min(100, Math.round((p / c) * 100)) : (p > 0 ? 100 : 0);
+                })()}% (Paid)
+              </span>
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Work Done / Physical Progress (%)</label>
+            <input
+              type="number"
+              value={editData.work_progress ?? editData.progress ?? 0}
+              min="0"
+              max="100"
+              onChange={(e) => {
+                const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                handleEditChange('work_progress', val);
+                handleEditChange('progress', val);
+              }}
+            />
+          </div>
           <div className="form-group"><label>Notes</label><textarea value={editData.notes || ''} onChange={(e) => handleEditChange('notes', e.target.value)} rows="2" /></div>
           <div className="mobile-edit-actions">
             <button onClick={saveEdit} className="save-action-btn"><Check size={16} /> Save</button>
@@ -370,9 +436,15 @@ const SortableMobileCard = ({
             <div className="stat-row highlight"><span>Balance:</span><strong className={balance > 0 ? 'text-danger' : 'text-success'}>{formatCurrency(balance)}</strong></div>
           </div>
 
-          <div className="mobile-progress-section">
-            <div className="progress-label"><span>Work Progress</span><span>{item.progress}%</span></div>
-            <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${item.progress}%` }}></div></div>
+          <div className="mobile-progress-dual">
+            <div className="mobile-progress-section">
+              <div className="progress-label"><span>Payment Progress (Paid)</span><span className="progress-badge payment-badge">{paymentPct}%</span></div>
+              <div className="progress-bar-bg"><div className="progress-bar-fill payment-fill" style={{ width: `${paymentPct}%` }}></div></div>
+            </div>
+            <div className="mobile-progress-section">
+              <div className="progress-label"><span>Work Done (Physical)</span><span className="progress-badge work-badge">{workProgress}%</span></div>
+              <div className="progress-bar-bg"><div className="progress-bar-fill work-fill" style={{ width: `${workProgress}%` }}></div></div>
+            </div>
           </div>
 
           {isExpanded && (
@@ -456,7 +528,14 @@ const WorkProgressTable = ({
     return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', minimumFractionDigits: 0 }).format(amount || 0);
   };
 
-  const startEdit = (item) => { setEditingId(item.id); setEditData({ ...item, labor_paid: item.labor_paid || 0 }); };
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditData({
+      ...item,
+      labor_paid: item.labor_paid || 0,
+      work_progress: item.work_progress !== undefined ? item.work_progress : (item.progress || 0)
+    });
+  };
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
   const saveEdit = () => { onEdit(editData); setEditingId(null); setEditData({}); };
   const handleEditChange = (field, value) => { setEditData(prev => ({ ...prev, [field]: value })); };
@@ -515,8 +594,9 @@ const WorkProgressTable = ({
                   <th>LABOUR</th>
                   <th>LABOUR COST</th>
                   <th>LABOUR PAID</th>
-                  <th>PROGRESS</th>
-                  {isAdmin && <th></th>}
+                  <th style={{ textAlign: 'center', minWidth: '120px' }} title="Calculated from amount paid vs total cost">PAYMENT %</th>
+                  <th style={{ textAlign: 'center', minWidth: '120px' }} title="Physical work completed on site">WORK DONE</th>
+                  {isAdmin && <th style={{ textAlign: 'center', width: '90px' }}>ACTIONS</th>}
                 </tr>
               </thead>
               <tbody>

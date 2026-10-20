@@ -54,16 +54,17 @@ export const generatePDFReport = ({
       acc.materialPaid += Number(item.amount_paid) || 0;
       acc.labor += Number(item.labor_cost) || 0;
       acc.laborPaid += Number(item.labor_paid) || 0;
-      acc.progressSum += Number(item.progress) || 0;
+      acc.workProgressSum += Number(item.work_progress !== undefined ? item.work_progress : item.progress) || 0;
       return acc;
     },
-    { material: 0, materialPaid: 0, labor: 0, laborPaid: 0, progressSum: 0 }
+    { material: 0, materialPaid: 0, labor: 0, laborPaid: 0, workProgressSum: 0 }
   );
 
   const totalCost = totals.material + totals.labor;
   const totalPaid = totals.materialPaid + totals.laborPaid;
   const balance = totalCost - totalPaid;
-  const avgProgress = items.length > 0 ? Math.round(totals.progressSum / items.length) : 0;
+  const avgWorkDone = items.length > 0 ? Math.round(totals.workProgressSum / items.length) : 0;
+  const overallPaidPct = totalCost > 0 ? Math.min(100, Math.round((totalPaid / totalCost) * 100)) : 0;
   const dateStr = new Date().toLocaleDateString('en-PK', {
     year: 'numeric',
     month: 'long',
@@ -97,8 +98,8 @@ export const generatePDFReport = ({
   doc.text(`Contractor: Nasir Shakeel   |   Report Date: ${dateStr}`, margin + 16, currentY + 46);
 
   const scopeText = filterInfo
-    ? `Scope: ${items.length} Items (${filterInfo}) of ${totalCount || items.length} Total   |   Average Progress: ${avgProgress}%`
-    : `Total Scope: ${items.length} Work Items   |   Overall Progress: ${avgProgress}% Complete`;
+    ? `Scope: ${items.length} Items (${filterInfo}) of ${totalCount || items.length} Total   |   Work Done: ${avgWorkDone}%   |   Paid: ${overallPaidPct}%`
+    : `Total Scope: ${items.length} Work Items   |   Work Done: ${avgWorkDone}% Complete   |   Payments: ${overallPaidPct}% Paid`;
   doc.text(scopeText, margin + 16, currentY + 60);
 
   currentY += 88;
@@ -199,6 +200,8 @@ export const generatePDFReport = ({
       const itemTotal = (Number(item.material_cost) || 0) + (Number(item.labor_cost) || 0);
       const itemPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
       const itemBalance = itemTotal - itemPaid;
+      const paymentPct = itemTotal > 0 ? Math.min(100, Math.round((itemPaid / itemTotal) * 100)) : (itemPaid > 0 ? 100 : 0);
+      const workDone = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
       return [
         `#${idx + 1}`,
         `${item.item || 'Item'}\n(${item.company || 'N/A'})`,
@@ -207,7 +210,8 @@ export const generatePDFReport = ({
         `${item.labor_name || 'N/A'}\n${formatPKR(item.labor_cost)}`,
         formatPKR(item.labor_paid || 0),
         formatPKR(itemBalance),
-        `${item.progress || 0}%`
+        `${paymentPct}%`,
+        `${workDone}%`
       ];
     });
 
@@ -222,27 +226,29 @@ export const generatePDFReport = ({
         formatPKR(totals.labor),
         formatPKR(totals.laborPaid),
         formatPKR(balance),
-        `${avgProgress}%`
+        `${overallPaidPct}%`,
+        `${avgWorkDone}%`
       ]
     ];
 
     runAutoTable(doc, {
       startY: currentY,
       margin: { left: margin, right: margin, bottom: 40 },
-      head: [['SR.', 'ITEM & VENDOR', 'MAT. COST', 'MAT. PAID', 'LABOR & COST', 'LABOR PAID', 'BALANCE', 'PROGRESS']],
+      head: [['SR.', 'ITEM & VENDOR', 'MAT. COST', 'MAT. PAID', 'LABOR & COST', 'LABOR PAID', 'BALANCE', 'PAID %', 'WORK DONE']],
       body: tableBodyWithTotal,
       theme: 'grid',
-      headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
-      bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59] },
+      headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7, halign: 'center' },
+      bodyStyles: { fontSize: 7, textColor: [30, 41, 59] },
       columnStyles: {
-        0: { halign: 'center', fontStyle: 'bold', cellWidth: 32 },
+        0: { halign: 'center', fontStyle: 'bold', cellWidth: 26 },
         1: { fontStyle: 'bold' },
-        2: { halign: 'right', cellWidth: 62 },
-        3: { halign: 'right', cellWidth: 62 },
-        4: { halign: 'right', cellWidth: 72 },
-        5: { halign: 'right', cellWidth: 62 },
-        6: { halign: 'right', fontStyle: 'bold', cellWidth: 68 },
-        7: { halign: 'center', fontStyle: 'bold', cellWidth: 55 }
+        2: { halign: 'right', cellWidth: 54 },
+        3: { halign: 'right', cellWidth: 54 },
+        4: { halign: 'right', cellWidth: 64 },
+        5: { halign: 'right', cellWidth: 54 },
+        6: { halign: 'right', fontStyle: 'bold', cellWidth: 60 },
+        7: { halign: 'center', fontStyle: 'bold', cellWidth: 44 },
+        8: { halign: 'center', fontStyle: 'bold', cellWidth: 48 }
       },
       didParseCell: (data) => {
         // Highlight total row at the bottom
@@ -273,6 +279,8 @@ export const generatePDFReport = ({
       const itemTotal = (Number(item.material_cost) || 0) + (Number(item.labor_cost) || 0);
       const itemPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
       const itemBalance = itemTotal - itemPaid;
+      const paymentPct = itemTotal > 0 ? Math.min(100, Math.round((itemPaid / itemTotal) * 100)) : (itemPaid > 0 ? 100 : 0);
+      const workDone = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
 
       // Check space before starting an item (avoid orphaned header cards)
       ensureRoom(120);
@@ -291,7 +299,7 @@ export const generatePDFReport = ({
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      const summaryRight = `Progress: ${item.progress || 0}%   |   Balance: ${formatPKR(itemBalance)}`;
+      const summaryRight = `Work Done: ${workDone}%   |   Paid: ${paymentPct}%   |   Balance: ${formatPKR(itemBalance)}`;
       doc.text(summaryRight, pageWidth - margin - 8 - doc.getTextWidth(summaryRight), currentY + 16);
 
       currentY += 30;

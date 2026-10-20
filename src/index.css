@@ -198,9 +198,87 @@ button.icon-btn.edit-btn:hover { background: #eff6ff; color: var(--accent); }
 }
 
 .progress-cell { display: flex; align-items: center; gap: 0.5rem; min-width: 120px; }
-.progress-cell span { font-weight: 600; font-size: 0.85rem; width: 3ch; }
+.progress-cell span { font-weight: 600; font-size: 0.85rem; }
 .progress-bar-bg { flex: 1; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.3s ease; }
+.progress-bar-fill.payment-fill { background: #10b981; }
+.progress-bar-fill.work-fill { background: #3b82f6; }
+
+/* Dual Progress Badges & Pills */
+.progress-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  min-width: 44px;
+  text-align: center;
+  display: inline-block;
+  line-height: 1.2;
+}
+.progress-badge.payment-badge {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+.progress-badge.work-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.auto-calc-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.auto-calc-badge.payment-badge {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+/* Dashboard Dual Progress Badges */
+.overall-dual-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.35rem 0;
+}
+.dual-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+.dual-badge.work-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.dual-badge.payment-badge {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* Mobile Dual Progress Section */
+.mobile-progress-dual {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  border: 1px solid #e2e8f0;
+}
+.mobile-progress-dual .mobile-progress-section {
+  margin-bottom: 0;
+}
 
 /* Expanded Row */
 .expanded-row td { padding: 0 !important; }
@@ -290,6 +368,8 @@ button.icon-btn.edit-btn:hover { background: #eff6ff; color: var(--accent); }
   .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
   .stat-card.primary { background: #333; }
   .progress-bar-fill { background: #333; }
+  .progress-bar-fill.payment-fill { background: #059669; }
+  .progress-bar-fill.work-fill { background: #2563eb; }
   .mobile-list { display: none !important; }
   .table-responsive { display: block !important; }
   .mobile-actions, .mobile-delete-btn, .mobile-edit-btn { display: none !important; }

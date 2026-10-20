@@ -138,7 +138,9 @@ function App() {
         material_cost: newItem.material_cost, amount_paid: newItem.amount_paid,
         labor_name: newItem.labor_name, labor_cost: newItem.labor_cost,
         labor_paid: newItem.labor_paid || 0,
-        progress: newItem.progress, notes: newItem.notes || '',
+        work_progress: Number(newItem.work_progress ?? newItem.progress) || 0,
+        progress: Number(newItem.work_progress ?? newItem.progress) || 0,
+        notes: newItem.notes || '',
         date: newItem.date, sort_order: workItems.length
       });
     } catch (error) {
@@ -157,7 +159,9 @@ function App() {
         material_cost: updatedItem.material_cost, amount_paid: updatedItem.amount_paid,
         labor_name: updatedItem.labor_name, labor_cost: updatedItem.labor_cost,
         labor_paid: updatedItem.labor_paid || 0,
-        progress: updatedItem.progress, notes: updatedItem.notes || ''
+        work_progress: Number(updatedItem.work_progress ?? updatedItem.progress) || 0,
+        progress: Number(updatedItem.work_progress ?? updatedItem.progress) || 0,
+        notes: updatedItem.notes || ''
       });
     } catch (error) {
       console.error('Error updating item:', error.message);

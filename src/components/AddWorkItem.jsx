@@ -23,6 +23,8 @@ const AddWorkItem = ({ onAddItem }) => {
     e.preventDefault();
     if (!formData.item || !formData.company) return;
 
+    const workDoneVal = Math.min(100, Math.max(0, Number(formData.work_progress ?? formData.progress) || 0));
+
     onAddItem({
       id: crypto.randomUUID(),
       item: formData.item,
@@ -32,14 +34,15 @@ const AddWorkItem = ({ onAddItem }) => {
       labor_name: formData.labor_name || 'N/A',
       labor_cost: Number(formData.labor_cost) || 0,
       labor_paid: Number(formData.labor_paid) || 0,
-      progress: Math.min(100, Math.max(0, Number(formData.progress) || 0)),
+      work_progress: workDoneVal,
+      progress: workDoneVal,
       notes: formData.notes || '',
       date: new Date().toISOString()
     });
 
     setFormData({
       item: '', company: '', material_cost: '', amount_paid: '',
-      labor_name: '', labor_cost: '', labor_paid: '', progress: '', notes: ''
+      labor_name: '', labor_cost: '', labor_paid: '', work_progress: '', progress: '', notes: ''
     });
   };
 
@@ -80,8 +83,16 @@ const AddWorkItem = ({ onAddItem }) => {
           </div>
         </div>
         <div className="form-group">
-          <label>Work Progress (%)</label>
-          <input type="number" name="progress" value={formData.progress} onChange={handleChange} placeholder="e.g. 20" min="0" max="100" />
+          <label>Work Done / Physical Progress (%)</label>
+          <input
+            type="number"
+            name="work_progress"
+            value={formData.work_progress ?? formData.progress ?? ''}
+            onChange={handleChange}
+            placeholder="e.g. 10 (Physical work done on site)"
+            min="0"
+            max="100"
+          />
         </div>
         <div className="form-group">
           <label>Notes (optional)</label>
