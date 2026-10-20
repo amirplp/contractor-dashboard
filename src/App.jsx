@@ -11,6 +11,21 @@ import { db } from './firebaseConfig';
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { arrayMove } from '@dnd-kit/sortable';
 
+const formatCategoryTabLabel = (raw) => {
+  if (!raw || raw === 'All') return 'All';
+  let s = raw.trim();
+  s = s.replace(/\s+plus\s+/gi, ' & ');
+  s = s.replace(/\s*\([^)]*\)/g, '');
+  const parts = s.split(/[/,]/).map(p => p.trim()).filter(Boolean);
+  let main = parts[0];
+  if (parts.length > 1 && parts[0].length < 8 && parts[1].length < 10) {
+    main = parts[0] + ' & ' + parts[1];
+  }
+  main = main.replace(/\s+(fittings?|showers?|comde.*|inside.*|two tone.*|salary.*|cost.*)$/i, '');
+  const clean = main.toUpperCase().trim();
+  return clean.length > 18 ? clean.substring(0, 17) + '…' : clean;
+};
+
 function App() {
   const [currentUser, setCurrentUser] = useState(null); // null | { role: 'admin' | 'viewer', email: string }
   const [showAccessModal, setShowAccessModal] = useState(false);
@@ -376,11 +391,11 @@ function App() {
     );
   }
 
-  const categories = ['All', ...new Set(workItems.map(wi => wi.item.toUpperCase()))];
+  const categories = ['All', ...new Set(workItems.map(wi => (wi.item || '').trim().toUpperCase()).filter(Boolean))];
 
   let filteredItems = selectedCategory === 'All'
     ? workItems
-    : workItems.filter(wi => wi.item.toUpperCase() === selectedCategory);
+    : workItems.filter(wi => (wi.item || '').trim().toUpperCase() === selectedCategory);
 
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
@@ -495,16 +510,17 @@ function App() {
             {categories.map(cat => {
               const count = cat === 'All'
                 ? workItems.length
-                : workItems.filter(wi => wi.item.toUpperCase() === cat).length;
+                : workItems.filter(wi => (wi.item || '').trim().toUpperCase() === cat).length;
               const isSelected = selectedCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={`category-tab-pill ${isSelected ? 'active' : ''}`}
+                  title={cat}
                 >
                   {cat === 'All' && <LayoutDashboard size={14} className="cat-tab-icon" />}
-                  <span>{cat}</span>
+                  <span>{formatCategoryTabLabel(cat)}</span>
                   <span className="tab-count-badge">{count}</span>
                 </button>
               );

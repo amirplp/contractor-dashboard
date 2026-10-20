@@ -32,26 +32,38 @@ const renderPriorityBadge = (index) => {
 /* Dynamic vibrant category styling helper */
 const getCategoryStyle = (categoryName) => {
   const cat = (categoryName || '').toUpperCase().trim();
-  if (cat.includes('TILE') || cat.includes('MARBLE')) {
+  if (cat.includes('WINDOW') || cat.includes('GLASS') || cat.includes('UPVC')) {
+    return { bg: '#e0f2fe', text: '#0284c7', border: '#bae6fd' }; // Sky Blue
+  }
+  if (cat.includes('CEILING') || cat.includes('MOULD')) {
+    return { bg: '#f5f3ff', text: '#7c3aed', border: '#ddd6fe' }; // Violet
+  }
+  if (cat.includes('TILE') || cat.includes('MARB')) {
     return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd' }; // Cyan / Sky
   }
-  if (cat.includes('SANITARY') || cat.includes('PLUMB')) {
+  if (cat.includes('SANITARY') || cat.includes('PLUMB') || cat.includes('GEEZER') || cat.includes('SHOWER')) {
     return { bg: '#ccfbf1', text: '#0f766e', border: '#99f6e4' }; // Teal
   }
-  if (cat.includes('ELECTR') || cat.includes('LIGHT') || cat.includes('WIRE')) {
+  if (cat.includes('ELECTR') || cat.includes('LIGHT') || cat.includes('WIRE') || cat.includes('SWITCH') || cat.includes('BULB')) {
     return { bg: '#fef3c7', text: '#b45309', border: '#fde68a' }; // Amber
   }
   if (cat.includes('PAINT') || cat.includes('POLISH')) {
     return { bg: '#fae8ff', text: '#a21caf', border: '#f5d0fe' }; // Fuchsia
   }
-  if (cat.includes('CEMENT') || cat.includes('BRICK') || cat.includes('MASON')) {
-    return { bg: '#ffedd5', text: '#c2410c', border: '#fed7aa' }; // Orange
-  }
-  if (cat.includes('WOOD') || cat.includes('CARPENT') || cat.includes('DOOR')) {
+  if (cat.includes('WOOD') || cat.includes('CARPENT') || cat.includes('DOOR') || cat.includes('CHOWKAT') || cat.includes('CABINET') || cat.includes('WARDROBE')) {
     return { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' }; // Emerald
   }
-  if (cat.includes('STEEL') || cat.includes('IRON') || cat.includes('METAL') || cat.includes('ROOF')) {
+  if (cat.includes('STEEL') || cat.includes('IRON') || cat.includes('METAL') || cat.includes('GRILL') || cat.includes('GATE') || cat.includes('RAILING')) {
     return { bg: '#e0e7ff', text: '#4338ca', border: '#c7d2fe' }; // Indigo
+  }
+  if (cat.includes('ROOF') || cat.includes('CHIPS') || cat.includes('CEMENT') || cat.includes('BRICK') || cat.includes('MASON')) {
+    return { bg: '#ffedd5', text: '#c2410c', border: '#fed7aa' }; // Orange
+  }
+  if (cat.includes('SALARY') || cat.includes('RENT') || cat.includes('WAGES') || cat.includes('CHOWKIDAR') || cat.includes('PETROL') || cat.includes('BILL')) {
+    return { bg: '#fef9c3', text: '#854d0e', border: '#fde047' }; // Warm Gold
+  }
+  if (cat.includes('CCTV') || cat.includes('INTERNET') || cat.includes('MISC')) {
+    return { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' }; // Blue
   }
   // Deterministic fallback based on hash
   let hash = 0;
@@ -111,8 +123,10 @@ const SortableRow = ({
             <td><input className="inline-input" value={editData.company || ''} onChange={(e) => handleEditChange('company', e.target.value)} /></td>
             <td><input className="inline-input" type="number" value={editData.material_cost ?? ''} onChange={(e) => handleEditChange('material_cost', Number(e.target.value))} /></td>
             <td><input className="inline-input" type="number" value={editData.amount_paid ?? ''} onChange={(e) => handleEditChange('amount_paid', Number(e.target.value))} /></td>
-            <td className={editBalance > 0 ? 'text-danger' : 'text-success'}>
-              {formatCurrency(editBalance)}
+            <td>
+              <span className={`badge-pill ${editBalance > 0 ? 'balance-danger-pill' : 'balance-cleared-pill'}`}>
+                {editBalance > 0 ? formatCurrency(editBalance) : 'Cleared'}
+              </span>
             </td>
             <td><input className="inline-input" value={editData.labor_name || ''} onChange={(e) => handleEditChange('labor_name', e.target.value)} /></td>
             <td><input className="inline-input" type="number" value={editData.labor_cost ?? ''} onChange={(e) => handleEditChange('labor_cost', Number(e.target.value))} /></td>
@@ -586,7 +600,11 @@ const SortableMobileCard = ({
               <span className="badge-pill material-paid-pill">{formatCurrency(item.amount_paid)}</span>
             </div>
             <div className="stat-row">
-              <span className="stat-label"><User size={13} /> Labor ({item.labor_name || 'N/A'}):</span>
+              <span className="stat-label"><User size={13} /> Labor Contractor:</span>
+              <span className="badge-pill labor-name-pill">{item.labor_name || 'N/A'}</span>
+            </div>
+            <div className="stat-row">
+              <span className="stat-label"><Hammer size={13} /> Labor Cost:</span>
               <span className="badge-pill labor-cost-pill">{formatCurrency(item.labor_cost)}</span>
             </div>
             <div className="stat-row">
@@ -765,14 +783,14 @@ const WorkProgressTable = ({
                   <th style={{ width: isAdmin ? '135px' : '85px', textAlign: 'center' }}>PRIORITY</th>
                   <th>ITEM / CATEGORY</th>
                   <th>VENDOR</th>
-                  <th>MATERIAL COST</th>
-                  <th>MATERIAL PAID</th>
-                  <th>BALANCE DUE</th>
-                  <th>LABOR</th>
-                  <th>LABOR COST</th>
-                  <th>LABOR PAID</th>
-                  <th style={{ textAlign: 'center', minWidth: '125px' }} title="Calculated from amount paid vs total cost">PAYMENT %</th>
-                  <th style={{ textAlign: 'center', minWidth: '125px' }} title="Physical work completed on site">WORK DONE</th>
+                  <th><span className="th-dot dot-indigo" />MATERIAL COST</th>
+                  <th><span className="th-dot dot-emerald" />MATERIAL PAID</th>
+                  <th><span className="th-dot dot-rose" />BALANCE DUE</th>
+                  <th><span className="th-dot dot-amber" />LABOR</th>
+                  <th><span className="th-dot dot-amber" />LABOR COST</th>
+                  <th><span className="th-dot dot-orange" />LABOR PAID</th>
+                  <th style={{ textAlign: 'center', minWidth: '125px' }} title="Calculated from amount paid vs total cost"><span className="th-dot dot-emerald" />PAYMENT %</th>
+                  <th style={{ textAlign: 'center', minWidth: '125px' }} title="Physical work completed on site"><span className="th-dot dot-blue" />WORK DONE</th>
                   {isAdmin && <th style={{ textAlign: 'center', width: '90px' }}>ACTIONS</th>}
                 </tr>
               </thead>

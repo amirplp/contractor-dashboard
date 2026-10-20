@@ -95,8 +95,24 @@ const CustomChartTooltip = ({ active, payload, label, mode, formatCurrency }) =>
   );
 };
 
+const cleanItemName = (raw) => {
+  if (!raw) return 'ITEM';
+  let s = raw.trim();
+  s = s.replace(/\s+plus\s+/gi, ' & ');
+  s = s.replace(/\s*\([^)]*\)/g, ''); // remove parenthetical remarks
+  const parts = s.split(/[/,]/).map(p => p.trim()).filter(Boolean);
+  let main = parts[0];
+  if (parts.length > 1 && parts[0].length < 8 && parts[1].length < 10) {
+    main = parts[0] + ' & ' + parts[1];
+  }
+  main = main.replace(/\s+(fittings?|showers?|comde.*|inside.*|two tone.*|salary.*|cost.*)$/i, '');
+  const clean = main.toUpperCase().trim();
+  return clean.length > 13 ? clean.substring(0, 12) + '…' : clean;
+};
+
 const Dashboard = ({ items, selectedCategory }) => {
   const [chartMode, setChartMode] = useState('percentage'); // 'percentage' | 'financial'
+  const [itemScope, setItemScope] = useState('key'); // 'key' | 'all'
 
   const totals = items.reduce(
     (acc, item) => {
@@ -136,65 +152,48 @@ const Dashboard = ({ items, selectedCategory }) => {
   const chartData = useMemo(() => {
     if (!items || items.length === 0) return [];
 
-    // When viewing 'All' with many items, grouping by Category gives an executive-level summary
-    if (selectedCategory === 'All' && items.length > 7) {
-      const categoryMap = {};
-      items.forEach(item => {
-        const catKey = (item.item || 'OTHER').toUpperCase().trim();
-        if (!categoryMap[catKey]) {
-          categoryMap[catKey] = {
-            name: catKey,
-            fullName: catKey,
-            company: `${catKey} Category`,
-            materialCost: 0,
-            materialPaid: 0,
-            laborCost: 0,
-            laborPaid: 0,
-            workProgressSum: 0,
-            count: 0
-          };
-        }
-        categoryMap[catKey].materialCost += Number(item.material_cost) || 0;
-        categoryMap[catKey].materialPaid += Number(item.amount_paid) || 0;
-        categoryMap[catKey].laborCost += Number(item.labor_cost) || 0;
-        categoryMap[catKey].laborPaid += Number(item.labor_paid) || 0;
-        categoryMap[catKey].workProgressSum += Number(item.work_progress !== undefined ? item.work_progress : item.progress) || 0;
-        categoryMap[catKey].count += 1;
+    let displayList = items;
+
+    // When viewing 'All' and we have many items, if 'key' scope is selected, prioritize major active milestones
+    if (selectedCategory === 'All' && items.length > 8 && itemScope === 'key') {
+      const activeItems = items.filter(it => {
+        const cost = (Number(it.material_cost) || 0) + (Number(it.labor_cost) || 0);
+        const work = Number(it.work_progress ?? it.progress) || 0;
+        const paid = (Number(it.amount_paid) || 0) + (Number(it.labor_paid) || 0);
+        return cost > 0 || work > 0 || paid > 0;
       });
 
-      return Object.values(categoryMap).map(cat => {
-        const total = cat.materialCost + cat.laborCost;
-        const paid = cat.materialPaid + cat.laborPaid;
-        const bal = Math.max(0, total - paid);
-        const workDone = Math.round(cat.workProgressSum / cat.count);
-        const payPct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : (paid > 0 ? 100 : 0);
-        return {
-          name: cat.name.length > 9 ? cat.name.substring(0, 8) + '…' : cat.name,
-          fullName: `${cat.name} (${cat.count} items)`,
-          company: `${cat.count} Work Item${cat.count > 1 ? 's' : ''}`,
-          workDone,
-          paymentPaid: payPct,
-          totalCost: total,
-          paid,
-          balance: bal
-        };
-      });
+      // Sort by total cost descending to feature the key project milestones
+      displayList = [...activeItems].sort((a, b) => {
+        const costA = (Number(a.material_cost) || 0) + (Number(a.labor_cost) || 0);
+        const costB = (Number(b.material_cost) || 0) + (Number(b.labor_cost) || 0);
+        return costB - costA;
+      }).slice(0, 8);
     }
 
-    // Otherwise show individual work items
-    return items.map(item => {
+    return displayList.map(item => {
       const total = (Number(item.material_cost) || 0) + (Number(item.labor_cost) || 0);
       const paid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
       const bal = Math.max(0, total - paid);
       const payPct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : (paid > 0 ? 100 : 0);
       const rawWork = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
       const workVal = Math.min(100, Math.max(0, Number(rawWork) || 0));
-      const cleanName = (item.item || 'ITEM').toUpperCase();
-      const displayName = cleanName.length > 9 ? cleanName.substring(0, 8) + '…' : cleanName;
+
+      // When category is specifically filtered, distinguish items by Vendor/Company
+      let displayName;
+      if (selectedCategory !== 'All' && item.company && item.company !== 'N/A') {
+        const comp = item.company.toUpperCase().trim();
+        displayName = comp.length > 12 ? comp.substring(0, 11) + '…' : comp;
+      } else {
+        displayName = cleanItemName(item.item);
+      }
+
+      const fullName = (item.item || 'ITEM').toUpperCase().trim();
 
       return {
+        id: item.id,
         name: displayName,
-        fullName: cleanName,
+        fullName: item.company && item.company !== 'N/A' ? `${fullName} (${item.company})` : fullName,
         company: item.company || 'N/A',
         workDone: workVal,
         paymentPaid: payPct,
@@ -203,7 +202,7 @@ const Dashboard = ({ items, selectedCategory }) => {
         balance: bal
       };
     });
-  }, [items, selectedCategory]);
+  }, [items, selectedCategory, itemScope]);
 
   return (
     <div className="dashboard-section">
@@ -277,24 +276,47 @@ const Dashboard = ({ items, selectedCategory }) => {
             </div>
 
             <div className="chart-controls-group">
-              <button
-                type="button"
-                className={`chart-view-toggle-btn ${chartMode === 'percentage' ? 'active' : ''}`}
-                onClick={() => setChartMode('percentage')}
-                title="View Work Done % vs Payment %"
-              >
-                <TrendingUp size={13} />
-                <span>Work vs Paid %</span>
-              </button>
-              <button
-                type="button"
-                className={`chart-view-toggle-btn ${chartMode === 'financial' ? 'active' : ''}`}
-                onClick={() => setChartMode('financial')}
-                title="View Paid vs Balance in PKR"
-              >
-                <Coins size={13} />
-                <span>PKR Budget</span>
-              </button>
+              {selectedCategory === 'All' && items.length > 8 && (
+                <div className="chart-toggle-pill-group">
+                  <button
+                    type="button"
+                    className={`chart-view-toggle-btn ${itemScope === 'key' ? 'active' : ''}`}
+                    onClick={() => setItemScope('key')}
+                    title="View top key active milestones"
+                  >
+                    <span>Key Milestones (8)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`chart-view-toggle-btn ${itemScope === 'all' ? 'active' : ''}`}
+                    onClick={() => setItemScope('all')}
+                    title="View all project items"
+                  >
+                    <span>All ({items.length})</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="chart-toggle-pill-group">
+                <button
+                  type="button"
+                  className={`chart-view-toggle-btn ${chartMode === 'percentage' ? 'active' : ''}`}
+                  onClick={() => setChartMode('percentage')}
+                  title="View Work Done % vs Payment %"
+                >
+                  <TrendingUp size={13} />
+                  <span>Work vs Paid %</span>
+                </button>
+                <button
+                  type="button"
+                  className={`chart-view-toggle-btn ${chartMode === 'financial' ? 'active' : ''}`}
+                  onClick={() => setChartMode('financial')}
+                  title="View Paid vs Balance in PKR"
+                >
+                  <Coins size={13} />
+                  <span>PKR Budget</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -454,7 +476,7 @@ const Dashboard = ({ items, selectedCategory }) => {
           </div>
           <span className="stat-value text-danger">{formatCurrency(balance)}</span>
           <div className="stat-card-footer">
-            <span className="stat-pill pill-balance">
+            <span className={`stat-pill ${balance > 0 ? 'pill-balance' : 'pill-paid'}`}>
               {balance > 0 ? `⚠️ ${100 - paymentProgress}% Unpaid` : '✓ Fully Settled'}
             </span>
             <span className="stat-subtext">of {formatCurrency(totalCost)} total</span>
@@ -480,7 +502,7 @@ const Dashboard = ({ items, selectedCategory }) => {
               />
             </div>
             <span className="stat-subtext">
-              Paid: <strong>{formatCurrency(totals.materialPaid)}</strong>
+              Paid: <strong>{formatCurrency(totals.materialPaid)}</strong> ({totals.material > 0 ? Math.round((totals.materialPaid / totals.material) * 100) : 0}%)
             </span>
           </div>
         </div>
@@ -504,7 +526,7 @@ const Dashboard = ({ items, selectedCategory }) => {
               />
             </div>
             <span className="stat-subtext">
-              Paid: <strong>{formatCurrency(totals.laborPaid)}</strong>
+              Paid: <strong>{formatCurrency(totals.laborPaid)}</strong> ({totals.labor > 0 ? Math.round((totals.laborPaid / totals.labor) * 100) : 0}%)
             </span>
           </div>
         </div>
