@@ -307,6 +307,23 @@ const Dashboard = ({ items, selectedCategory }) => {
                   margin={{ top: 12, right: 12, left: -16, bottom: 0 }}
                   barGap={4}
                 >
+                  <defs>
+                    {/* Work Done Gradient: Electric Blue #3b82f6 */}
+                    <linearGradient id="workGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.88} />
+                    </linearGradient>
+                    {/* Payment Paid Gradient: Emerald Green #10b981 */}
+                    <linearGradient id="payGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#059669" stopOpacity={0.88} />
+                    </linearGradient>
+                    {/* Balance Due Gradient: Rose/Red #ef4444 */}
+                    <linearGradient id="dueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.88} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.7} />
                   <XAxis
                     dataKey="name"
@@ -351,7 +368,7 @@ const Dashboard = ({ items, selectedCategory }) => {
                       <Bar
                         dataKey="workDone"
                         name="Physical Work Done (%)"
-                        fill="#3b82f6"
+                        fill="url(#workGrad)"
                         radius={[4, 4, 0, 0]}
                         maxBarSize={22}
                       />
@@ -359,7 +376,7 @@ const Dashboard = ({ items, selectedCategory }) => {
                       <Bar
                         dataKey="paymentPaid"
                         name="Financial Payment (%)"
-                        fill="#10b981"
+                        fill="url(#payGrad)"
                         radius={[4, 4, 0, 0]}
                         maxBarSize={22}
                       />
@@ -370,7 +387,7 @@ const Dashboard = ({ items, selectedCategory }) => {
                       <Bar
                         dataKey="paid"
                         name="Amount Paid (PKR)"
-                        fill="#10b981"
+                        fill="url(#payGrad)"
                         radius={[4, 4, 0, 0]}
                         maxBarSize={22}
                       />
@@ -378,7 +395,7 @@ const Dashboard = ({ items, selectedCategory }) => {
                       <Bar
                         dataKey="balance"
                         name="Balance Due (PKR)"
-                        fill="#ef4444"
+                        fill="url(#dueGrad)"
                         radius={[4, 4, 0, 0]}
                         maxBarSize={22}
                       />
@@ -444,7 +461,7 @@ const Dashboard = ({ items, selectedCategory }) => {
           </div>
         </div>
 
-        {/* Material Cost Card (Warm Amber / Gold) */}
+        {/* Material Cost Card (Indigo / Purple #6366f1) */}
         <div className="stat-card card-material">
           <div className="stat-card-header">
             <span className="stat-title">Material Cost</span>
@@ -452,11 +469,11 @@ const Dashboard = ({ items, selectedCategory }) => {
               <Package size={18} />
             </div>
           </div>
-          <span className="stat-value text-amber">{formatCurrency(totals.material)}</span>
+          <span className="stat-value text-indigo">{formatCurrency(totals.material)}</span>
           <div className="stat-card-footer">
             <div className="stat-mini-bar">
               <div
-                className="stat-mini-bar-fill fill-amber"
+                className="stat-mini-bar-fill fill-indigo"
                 style={{
                   width: `${totals.material > 0 ? Math.min(100, Math.round((totals.materialPaid / totals.material) * 100)) : 0}%`
                 }}
@@ -468,7 +485,7 @@ const Dashboard = ({ items, selectedCategory }) => {
           </div>
         </div>
 
-        {/* Labor Cost Card (Royal Purple / Violet) */}
+        {/* Labor Cost Card (Warm Amber / Orange #f59e0b) */}
         <div className="stat-card card-labor">
           <div className="stat-card-header">
             <span className="stat-title">Labor Cost</span>
@@ -476,11 +493,11 @@ const Dashboard = ({ items, selectedCategory }) => {
               <Hammer size={18} />
             </div>
           </div>
-          <span className="stat-value text-purple">{formatCurrency(totals.labor)}</span>
+          <span className="stat-value text-amber">{formatCurrency(totals.labor)}</span>
           <div className="stat-card-footer">
             <div className="stat-mini-bar">
               <div
-                className="stat-mini-bar-fill fill-purple"
+                className="stat-mini-bar-fill fill-amber"
                 style={{
                   width: `${totals.labor > 0 ? Math.min(100, Math.round((totals.laborPaid / totals.labor) * 100)) : 0}%`
                 }}

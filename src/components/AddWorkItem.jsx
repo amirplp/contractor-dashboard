@@ -65,7 +65,7 @@ const AddWorkItem = ({ onAddItem }) => {
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#b45309' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4f46e5' }}>
               <Package size={13} /> Material Cost
             </label>
             <input type="number" name="material_cost" value={formData.material_cost} onChange={handleChange} placeholder="0" min="0" />
@@ -78,20 +78,20 @@ const AddWorkItem = ({ onAddItem }) => {
           </div>
         </div>
         <div className="form-group">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#6d28d9' }}>
-            <User size={13} /> Labor Name
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#b45309' }}>
+            <User size={13} /> Labor Contractor / Worker
           </label>
           <input type="text" name="labor_name" value={formData.labor_name} onChange={handleChange} placeholder="e.g. AMIR" />
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#6d28d9' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#b45309' }}>
               <Hammer size={13} /> Labor Cost
             </label>
             <input type="number" name="labor_cost" value={formData.labor_cost} onChange={handleChange} placeholder="0" min="0" />
           </div>
           <div className="form-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#047857' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#c2410c' }}>
               <Check size={13} /> Labor Paid
             </label>
             <input type="number" name="labor_paid" value={formData.labor_paid} onChange={handleChange} placeholder="0" min="0" />

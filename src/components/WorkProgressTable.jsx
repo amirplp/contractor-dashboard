@@ -246,23 +246,23 @@ const SortableRow = ({
               </span>
             </td>
 
-            {/* Material Cost (Warm Amber) */}
+            {/* Material Cost (Indigo/Purple #6366f1) */}
             <td>
-              <span className="badge-pill material-cost-pill" title="Material Cost">
+              <span className="badge-pill material-cost-pill" title="Material Cost (Indigo)">
                 <Package size={12} />
                 <span>{formatCurrency(item.material_cost)}</span>
               </span>
             </td>
 
-            {/* Material Paid (Green) */}
+            {/* Material Paid (Emerald Green #10b981) */}
             <td>
-              <span className="badge-pill material-paid-pill" title="Material Amount Paid">
+              <span className="badge-pill material-paid-pill" title="Material Amount Paid (Emerald Green)">
                 <Check size={12} />
                 <span>{formatCurrency(item.amount_paid)}</span>
               </span>
             </td>
 
-            {/* Balance Due (Red if > 0, Green if 0) */}
+            {/* Balance Due (Rose/Red #ef4444) */}
             <td>
               {balance > 0 ? (
                 <span className="badge-pill balance-danger-pill" title={`Remaining Unpaid Balance: ${formatCurrency(balance)}`}>
@@ -277,25 +277,25 @@ const SortableRow = ({
               )}
             </td>
 
-            {/* Labor Name (Purple User Avatar) */}
+            {/* Labor Contractor / Worker Tag (Warm Amber/Orange) */}
             <td>
-              <span className="badge-pill labor-name-pill" title={`Labor: ${item.labor_name || 'N/A'}`}>
+              <span className="badge-pill labor-name-pill" title={`Labor Contractor / Worker: ${item.labor_name || 'N/A'}`}>
                 <User size={12} />
                 <span>{item.labor_name || 'N/A'}</span>
               </span>
             </td>
 
-            {/* Labor Cost (Purple) */}
+            {/* Labor Cost (Warm Amber/Orange #f59e0b) */}
             <td>
-              <span className="badge-pill labor-cost-pill" title="Labor Cost">
+              <span className="badge-pill labor-cost-pill" title="Labor Cost (Warm Amber)">
                 <Hammer size={12} />
                 <span>{formatCurrency(item.labor_cost)}</span>
               </span>
             </td>
 
-            {/* Labor Paid (Green) */}
+            {/* Labor Paid (Warm Amber/Orange #d97706) */}
             <td>
-              <span className="badge-pill labor-paid-pill" title="Labor Amount Paid">
+              <span className="badge-pill labor-paid-pill" title="Labor Amount Paid (Warm Amber)">
                 <Check size={12} />
                 <span>{formatCurrency(item.labor_paid)}</span>
               </span>
