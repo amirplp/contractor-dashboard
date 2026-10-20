@@ -201,7 +201,7 @@ export const generatePDFReport = ({
       const itemPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
       const itemBalance = itemTotal - itemPaid;
       const paymentPct = itemTotal > 0 ? Math.min(100, Math.round((itemPaid / itemTotal) * 100)) : (itemPaid > 0 ? 100 : 0);
-      const workDone = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
+      const workDone = Math.min(100, Math.max(0, Number(item.work_progress !== undefined ? item.work_progress : item.progress) || 0));
       return [
         `#${idx + 1}`,
         `${item.item || 'Item'}\n(${item.company || 'N/A'})`,
@@ -280,7 +280,7 @@ export const generatePDFReport = ({
       const itemPaid = (Number(item.amount_paid) || 0) + (Number(item.labor_paid) || 0);
       const itemBalance = itemTotal - itemPaid;
       const paymentPct = itemTotal > 0 ? Math.min(100, Math.round((itemPaid / itemTotal) * 100)) : (itemPaid > 0 ? 100 : 0);
-      const workDone = item.work_progress !== undefined ? item.work_progress : (item.progress || 0);
+      const workDone = Math.min(100, Math.max(0, Number(item.work_progress !== undefined ? item.work_progress : item.progress) || 0));
 
       // Check space before starting an item (avoid orphaned header cards)
       ensureRoom(120);
@@ -290,17 +290,27 @@ export const generatePDFReport = ({
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, currentY, contentWidth, 24, 3, 3, 'FD');
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(30, 41, 59);
-      const itemTitle = `#${idx + 1} - ${(item.item || 'Item').toUpperCase()} (Vendor: ${item.company || 'N/A'})`;
-      doc.text(itemTitle, margin + 8, currentY + 16);
-
+      // Right-aligned status summary
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
       const summaryRight = `Work Done: ${workDone}%   |   Paid: ${paymentPct}%   |   Balance: ${formatPKR(itemBalance)}`;
-      doc.text(summaryRight, pageWidth - margin - 8 - doc.getTextWidth(summaryRight), currentY + 16);
+      const summaryRightWidth = doc.getTextWidth(summaryRight);
+      doc.text(summaryRight, pageWidth - margin - 8 - summaryRightWidth, currentY + 16);
+
+      // Left-aligned item title with automatic boundary ellipsis to prevent overlapping right summary
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+      const maxTitleWidth = contentWidth - summaryRightWidth - 24;
+      let itemTitle = `#${idx + 1} - ${(item.item || 'Item').toUpperCase()} (Vendor: ${item.company || 'N/A'})`;
+      if (doc.getTextWidth(itemTitle) > maxTitleWidth) {
+        while (itemTitle.length > 3 && doc.getTextWidth(itemTitle + '...') > maxTitleWidth) {
+          itemTitle = itemTitle.slice(0, -1);
+        }
+        itemTitle += '...';
+      }
+      doc.text(itemTitle, margin + 8, currentY + 16);
 
       currentY += 30;
 

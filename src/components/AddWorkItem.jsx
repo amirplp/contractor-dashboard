@@ -10,6 +10,7 @@ const AddWorkItem = ({ onAddItem }) => {
     labor_name: '',
     labor_cost: '',
     labor_paid: '',
+    work_progress: '',
     progress: '',
     notes: ''
   });
