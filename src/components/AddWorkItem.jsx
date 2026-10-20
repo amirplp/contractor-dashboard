@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Building2, Package, User, Hammer, Check, Tag } from 'lucide-react';
 
 const AddWorkItem = ({ onAddItem }) => {
   const [formData, setFormData] = useState({
@@ -49,42 +49,58 @@ const AddWorkItem = ({ onAddItem }) => {
 
   return (
     <div className="card add-item-card">
-      <h2><PlusCircle size={24} /> New Work Item</h2>
+      <h2><PlusCircle size={22} /> New Work Item</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Item / Category</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Tag size={13} /> Item / Category
+          </label>
           <input type="text" name="item" value={formData.item} onChange={handleChange} placeholder="e.g. TILES" required />
         </div>
         <div className="form-group">
-          <label>Company / Vendor</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Building2 size={13} /> Company / Vendor
+          </label>
           <input type="text" name="company" value={formData.company} onChange={handleChange} placeholder="e.g. SHAKEEL TRDRS" required />
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label>Material Cost</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#b45309' }}>
+              <Package size={13} /> Material Cost
+            </label>
             <input type="number" name="material_cost" value={formData.material_cost} onChange={handleChange} placeholder="0" min="0" />
           </div>
           <div className="form-group">
-            <label>Material Paid</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#047857' }}>
+              <Check size={13} /> Material Paid
+            </label>
             <input type="number" name="amount_paid" value={formData.amount_paid} onChange={handleChange} placeholder="0" min="0" />
           </div>
         </div>
         <div className="form-group">
-          <label>Labor Name</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#6d28d9' }}>
+            <User size={13} /> Labor Name
+          </label>
           <input type="text" name="labor_name" value={formData.labor_name} onChange={handleChange} placeholder="e.g. AMIR" />
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label>Labor Cost</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#6d28d9' }}>
+              <Hammer size={13} /> Labor Cost
+            </label>
             <input type="number" name="labor_cost" value={formData.labor_cost} onChange={handleChange} placeholder="0" min="0" />
           </div>
           <div className="form-group">
-            <label>Labor Paid</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#047857' }}>
+              <Check size={13} /> Labor Paid
+            </label>
             <input type="number" name="labor_paid" value={formData.labor_paid} onChange={handleChange} placeholder="0" min="0" />
           </div>
         </div>
         <div className="form-group">
-          <label>Work Done / Physical Progress (%)</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#1d4ed8' }}>
+            🔨 Physical Work Done (%)
+          </label>
           <input
             type="number"
             name="work_progress"

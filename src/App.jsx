@@ -492,24 +492,23 @@ function App() {
       {workItems.length > 0 && (
         <div className="controls-row no-print">
           <div className="category-tabs">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                style={{
-                  width: 'auto', padding: '0.5rem 1.25rem', borderRadius: '999px',
-                  fontWeight: '500', fontSize: '0.9rem', whiteSpace: 'nowrap',
-                  transition: 'all 0.2s ease',
-                  backgroundColor: selectedCategory === cat ? 'var(--accent)' : '#ffffff',
-                  color: selectedCategory === cat ? '#ffffff' : 'var(--text-muted)',
-                  border: selectedCategory === cat ? 'none' : '1px solid #e2e8f0',
-                  boxShadow: selectedCategory === cat ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
-                }}
-              >
-                {cat === 'All' && <LayoutDashboard size={14} style={{ marginRight: '0.35rem', display: 'inline' }} />}
-                {cat}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const count = cat === 'All'
+                ? workItems.length
+                : workItems.filter(wi => wi.item.toUpperCase() === cat).length;
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`category-tab-pill ${isSelected ? 'active' : ''}`}
+                >
+                  {cat === 'All' && <LayoutDashboard size={14} className="cat-tab-icon" />}
+                  <span>{cat}</span>
+                  <span className="tab-count-badge">{count}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="search-bar">
             <Search size={18} className="search-icon" />
